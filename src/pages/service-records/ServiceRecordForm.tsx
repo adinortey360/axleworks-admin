@@ -182,7 +182,7 @@ export function ServiceRecordForm() {
   }, [existingRecord]);
 
   // Fetch vehicle details
-  const { data: vehicleData } = useQuery({
+  const { data: vehicleData, isLoading: isLoadingVehicle } = useQuery({
     queryKey: ['vehicle', vehicleId || existingRecord?.vehicleId],
     queryFn: async () => {
       const vId = vehicleId || existingRecord?.vehicleId?._id || existingRecord?.vehicleId;
@@ -192,6 +192,16 @@ export function ServiceRecordForm() {
     },
     enabled: !!(vehicleId || existingRecord?.vehicleId),
   });
+
+  // Prepopulate mileage from vehicle data when creating new record
+  useEffect(() => {
+    if (!isEditMode && vehicleData && vehicleData.mileage) {
+      setFormData(prev => ({
+        ...prev,
+        mileageAtService: vehicleData.mileage,
+      }));
+    }
+  }, [vehicleData, isEditMode]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -229,7 +239,7 @@ export function ServiceRecordForm() {
     }
   };
 
-  if (isEditMode && isLoadingRecord) {
+  if ((isEditMode && isLoadingRecord) || isLoadingVehicle) {
     return <div className="p-6">Loading...</div>;
   }
 
