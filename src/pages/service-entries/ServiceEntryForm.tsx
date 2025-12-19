@@ -191,6 +191,10 @@ export function ServiceEntryForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.vehicleId) {
+      alert('Vehicle ID is required. Please access this page from a vehicle\'s service history.');
+      return;
+    }
     if (isEditMode) {
       updateMutation.mutate(formData);
     } else {

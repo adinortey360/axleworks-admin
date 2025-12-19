@@ -89,9 +89,11 @@ export function ServiceEntriesList() {
             <Button variant="outline" leftIcon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate('/vehicles')}>
               Back to Vehicles
             </Button>
-            <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => navigate(`/service-entries/new?vehicleId=${vehicleId}`)}>
-              Add Service
-            </Button>
+            {vehicleId && (
+              <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => navigate(`/service-entries/new?vehicleId=${vehicleId}`)}>
+                Add Service
+              </Button>
+            )}
           </div>
         }
       />
@@ -126,9 +128,11 @@ export function ServiceEntriesList() {
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-gray-500">No service entries found</p>
-              <Button className="mt-4" onClick={() => navigate(`/service-entries/new?vehicleId=${vehicleId}`)}>
-                Add First Service Entry
-              </Button>
+              {vehicleId && (
+                <Button className="mt-4" onClick={() => navigate(`/service-entries/new?vehicleId=${vehicleId}`)}>
+                  Add First Service Entry
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
