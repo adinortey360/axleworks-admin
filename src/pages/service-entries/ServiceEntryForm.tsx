@@ -499,17 +499,393 @@ export function ServiceEntryForm() {
           </Card>
         );
 
-      default:
+      case 'fluid_service':
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Service Details</CardTitle>
+              <CardTitle>Fluid Service Details</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-gray-500 text-sm">Add any relevant details in the notes section below.</p>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-3">Transmission Fluid</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField
+                      label="Level"
+                      value={formData.data.transFluidLevel || 'full'}
+                      onChange={(v) => updateData('transFluidLevel', v)}
+                      options={[
+                        { value: 'full', label: 'Full' },
+                        { value: 'good', label: 'Good' },
+                        { value: 'low', label: 'Low' },
+                        { value: 'critical', label: 'Critical' },
+                      ]}
+                    />
+                    <SelectField
+                      label="Condition"
+                      value={formData.data.transFluidCondition || 'clean'}
+                      onChange={(v) => updateData('transFluidCondition', v)}
+                      options={[
+                        { value: 'clean', label: 'Clean' },
+                        { value: 'good', label: 'Good' },
+                        { value: 'dirty', label: 'Dirty' },
+                        { value: 'burnt', label: 'Burnt' },
+                      ]}
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer mt-3">
+                    <input
+                      type="checkbox"
+                      checked={formData.data.transFluidChanged || false}
+                      onChange={(e) => updateData('transFluidChanged', e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Fluid Changed</span>
+                  </label>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-3">Coolant</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField
+                      label="Level"
+                      value={formData.data.coolantLevel || 'full'}
+                      onChange={(v) => updateData('coolantLevel', v)}
+                      options={[
+                        { value: 'full', label: 'Full' },
+                        { value: 'good', label: 'Good' },
+                        { value: 'low', label: 'Low' },
+                        { value: 'critical', label: 'Critical' },
+                      ]}
+                    />
+                    <SelectField
+                      label="Condition"
+                      value={formData.data.coolantCondition || 'clean'}
+                      onChange={(v) => updateData('coolantCondition', v)}
+                      options={[
+                        { value: 'clean', label: 'Clean' },
+                        { value: 'good', label: 'Good' },
+                        { value: 'dirty', label: 'Dirty' },
+                        { value: 'contaminated', label: 'Contaminated' },
+                      ]}
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer mt-3">
+                    <input
+                      type="checkbox"
+                      checked={formData.data.coolantChanged || false}
+                      onChange={(e) => updateData('coolantChanged', e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Coolant Changed</span>
+                  </label>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-3">Power Steering Fluid</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField
+                      label="Level"
+                      value={formData.data.psFluidLevel || 'full'}
+                      onChange={(v) => updateData('psFluidLevel', v)}
+                      options={[
+                        { value: 'full', label: 'Full' },
+                        { value: 'good', label: 'Good' },
+                        { value: 'low', label: 'Low' },
+                        { value: 'critical', label: 'Critical' },
+                      ]}
+                    />
+                    <label className="flex items-center gap-2 cursor-pointer pt-6">
+                      <input
+                        type="checkbox"
+                        checked={formData.data.psFluidChanged || false}
+                        onChange={(e) => updateData('psFluidChanged', e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">Topped Up</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-3">Windshield Washer</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField
+                      label="Level"
+                      value={formData.data.washerFluidLevel || 'full'}
+                      onChange={(v) => updateData('washerFluidLevel', v)}
+                      options={[
+                        { value: 'full', label: 'Full' },
+                        { value: 'good', label: 'Good' },
+                        { value: 'low', label: 'Low' },
+                        { value: 'empty', label: 'Empty' },
+                      ]}
+                    />
+                    <label className="flex items-center gap-2 cursor-pointer pt-6">
+                      <input
+                        type="checkbox"
+                        checked={formData.data.washerFluidFilled || false}
+                        onChange={(e) => updateData('washerFluidFilled', e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">Refilled</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         );
+
+      case 'wiper_service':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Wiper Service Details</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="border rounded-lg p-4">
+                <h4 className="font-medium mb-3">Front Wipers</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <SelectField
+                    label="Condition"
+                    value={formData.data.frontWiperCondition || 'good'}
+                    onChange={(v) => updateData('frontWiperCondition', v)}
+                    options={[
+                      { value: 'good', label: 'Good' },
+                      { value: 'fair', label: 'Fair' },
+                      { value: 'streaking', label: 'Streaking' },
+                      { value: 'replace', label: 'Replace' },
+                    ]}
+                  />
+                  <label className="flex items-center gap-2 cursor-pointer pt-6">
+                    <input
+                      type="checkbox"
+                      checked={formData.data.frontWipersReplaced || false}
+                      onChange={(e) => updateData('frontWipersReplaced', e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Replaced</span>
+                  </label>
+                </div>
+              </div>
+              <div className="border rounded-lg p-4">
+                <h4 className="font-medium mb-3">Rear Wiper</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <SelectField
+                    label="Condition"
+                    value={formData.data.rearWiperCondition || 'good'}
+                    onChange={(v) => updateData('rearWiperCondition', v)}
+                    options={[
+                      { value: 'good', label: 'Good' },
+                      { value: 'fair', label: 'Fair' },
+                      { value: 'streaking', label: 'Streaking' },
+                      { value: 'replace', label: 'Replace' },
+                      { value: 'n/a', label: 'N/A' },
+                    ]}
+                  />
+                  <label className="flex items-center gap-2 cursor-pointer pt-6">
+                    <input
+                      type="checkbox"
+                      checked={formData.data.rearWiperReplaced || false}
+                      onChange={(e) => updateData('rearWiperReplaced', e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Replaced</span>
+                  </label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'light_check':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Light Check Details</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <SelectField
+                label="Headlights"
+                value={formData.data.headlights || 'working'}
+                onChange={(v) => updateData('headlights', v)}
+                options={[
+                  { value: 'working', label: 'Working' },
+                  { value: 'dim', label: 'Dim' },
+                  { value: 'one_out', label: 'One Out' },
+                  { value: 'both_out', label: 'Both Out' },
+                ]}
+              />
+              <SelectField
+                label="High Beams"
+                value={formData.data.highBeams || 'working'}
+                onChange={(v) => updateData('highBeams', v)}
+                options={[
+                  { value: 'working', label: 'Working' },
+                  { value: 'dim', label: 'Dim' },
+                  { value: 'one_out', label: 'One Out' },
+                  { value: 'both_out', label: 'Both Out' },
+                ]}
+              />
+              <SelectField
+                label="Taillights"
+                value={formData.data.taillights || 'working'}
+                onChange={(v) => updateData('taillights', v)}
+                options={[
+                  { value: 'working', label: 'Working' },
+                  { value: 'one_out', label: 'One Out' },
+                  { value: 'both_out', label: 'Both Out' },
+                ]}
+              />
+              <SelectField
+                label="Brake Lights"
+                value={formData.data.brakeLights || 'working'}
+                onChange={(v) => updateData('brakeLights', v)}
+                options={[
+                  { value: 'working', label: 'Working' },
+                  { value: 'one_out', label: 'One Out' },
+                  { value: 'all_out', label: 'All Out' },
+                ]}
+              />
+              <SelectField
+                label="Turn Signals"
+                value={formData.data.turnSignals || 'working'}
+                onChange={(v) => updateData('turnSignals', v)}
+                options={[
+                  { value: 'working', label: 'Working' },
+                  { value: 'front_issue', label: 'Front Issue' },
+                  { value: 'rear_issue', label: 'Rear Issue' },
+                  { value: 'not_working', label: 'Not Working' },
+                ]}
+              />
+              <SelectField
+                label="Hazard Lights"
+                value={formData.data.hazardLights || 'working'}
+                onChange={(v) => updateData('hazardLights', v)}
+                options={[
+                  { value: 'working', label: 'Working' },
+                  { value: 'not_working', label: 'Not Working' },
+                ]}
+              />
+              <SelectField
+                label="Fog Lights"
+                value={formData.data.fogLights || 'working'}
+                onChange={(v) => updateData('fogLights', v)}
+                options={[
+                  { value: 'working', label: 'Working' },
+                  { value: 'one_out', label: 'One Out' },
+                  { value: 'both_out', label: 'Both Out' },
+                  { value: 'n/a', label: 'N/A' },
+                ]}
+              />
+              <SelectField
+                label="License Plate Light"
+                value={formData.data.licensePlateLight || 'working'}
+                onChange={(v) => updateData('licensePlateLight', v)}
+                options={[
+                  { value: 'working', label: 'Working' },
+                  { value: 'out', label: 'Out' },
+                ]}
+              />
+            </CardContent>
+          </Card>
+        );
+
+      case 'general_inspection':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>General Inspection Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <SelectField
+                  label="Exterior Condition"
+                  value={formData.data.exteriorCondition || 'good'}
+                  onChange={(v) => updateData('exteriorCondition', v)}
+                  options={[
+                    { value: 'excellent', label: 'Excellent' },
+                    { value: 'good', label: 'Good' },
+                    { value: 'fair', label: 'Fair' },
+                    { value: 'poor', label: 'Poor' },
+                  ]}
+                />
+                <SelectField
+                  label="Interior Condition"
+                  value={formData.data.interiorCondition || 'good'}
+                  onChange={(v) => updateData('interiorCondition', v)}
+                  options={[
+                    { value: 'excellent', label: 'Excellent' },
+                    { value: 'good', label: 'Good' },
+                    { value: 'fair', label: 'Fair' },
+                    { value: 'poor', label: 'Poor' },
+                  ]}
+                />
+                <SelectField
+                  label="Undercarriage"
+                  value={formData.data.undercarriage || 'good'}
+                  onChange={(v) => updateData('undercarriage', v)}
+                  options={[
+                    { value: 'good', label: 'Good' },
+                    { value: 'surface_rust', label: 'Surface Rust' },
+                    { value: 'rust', label: 'Rust' },
+                    { value: 'damage', label: 'Damage' },
+                  ]}
+                />
+                <SelectField
+                  label="Engine Bay"
+                  value={formData.data.engineBay || 'good'}
+                  onChange={(v) => updateData('engineBay', v)}
+                  options={[
+                    { value: 'clean', label: 'Clean' },
+                    { value: 'good', label: 'Good' },
+                    { value: 'dirty', label: 'Dirty' },
+                    { value: 'leaks', label: 'Leaks Detected' },
+                  ]}
+                />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.data.beltsChecked || false}
+                    onChange={(e) => updateData('beltsChecked', e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Belts OK</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.data.hosesChecked || false}
+                    onChange={(e) => updateData('hosesChecked', e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Hoses OK</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.data.suspensionChecked || false}
+                    onChange={(e) => updateData('suspensionChecked', e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Suspension OK</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.data.exhaustChecked || false}
+                    onChange={(e) => updateData('exhaustChecked', e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Exhaust OK</span>
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      default:
+        return null;
     }
   };
 
