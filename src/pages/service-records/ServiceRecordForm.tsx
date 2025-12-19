@@ -20,7 +20,7 @@ interface ServiceRecordData {
   vehicleId: string;
   mileageAtService: number;
   serviceDate: string;
-  oil: { level: LevelOption; condition: ConditionOption; changed: boolean; nextChangeMileage?: number };
+  oil: { level: LevelOption; condition: ConditionOption; changed: boolean; oilType?: string; oilBrand?: string; changeIntervalMonths?: number; nextChangeMileage?: number };
   brakeFluid: { level: LevelOption; condition: ConditionOption; changed: boolean };
   transmissionFluid: { level: LevelOption; condition: ConditionOption; changed: boolean };
   coolant: { level: LevelOption; condition: ConditionOption; changed: boolean };
@@ -47,7 +47,7 @@ const defaultFormData: ServiceRecordData = {
   vehicleId: '',
   mileageAtService: 0,
   serviceDate: new Date().toISOString().split('T')[0],
-  oil: { level: 'not_checked', condition: 'not_checked', changed: false },
+  oil: { level: 'not_checked', condition: 'not_checked', changed: false, oilType: '', oilBrand: '', changeIntervalMonths: 6 },
   brakeFluid: { level: 'not_checked', condition: 'not_checked', changed: false },
   transmissionFluid: { level: 'not_checked', condition: 'not_checked', changed: false },
   coolant: { level: 'not_checked', condition: 'not_checked', changed: false },
@@ -390,7 +390,7 @@ export function ServiceRecordForm() {
             {/* Oil */}
             <div className="border-b pb-4">
               <h4 className="font-medium mb-3">Engine Oil</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <SelectField label="Level" value={formData.oil.level} onChange={(v) => setFormData(prev => ({ ...prev, oil: { ...prev.oil, level: v as LevelOption } }))} options={levelOptions} />
                 <SelectField label="Condition" value={formData.oil.condition} onChange={(v) => setFormData(prev => ({ ...prev, oil: { ...prev.oil, condition: v as ConditionOption } }))} options={conditionOptions} />
                 <NumberField label="Next Change (mi)" value={formData.oil.nextChangeMileage || 0} onChange={(v) => setFormData(prev => ({ ...prev, oil: { ...prev.oil, nextChangeMileage: v } }))} />
@@ -398,6 +398,37 @@ export function ServiceRecordForm() {
                   <CheckboxField label="Oil Changed" checked={formData.oil.changed} onChange={(v) => setFormData(prev => ({ ...prev, oil: { ...prev.oil, changed: v } }))} />
                 </div>
               </div>
+              {formData.oil.changed && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-gray-50 p-3 rounded-lg">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Oil Brand</label>
+                    <input
+                      type="text"
+                      value={formData.oil.oilBrand || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, oil: { ...prev.oil, oilBrand: e.target.value } }))}
+                      placeholder="e.g., Mobil 1, Castrol"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Oil Type</label>
+                    <input
+                      type="text"
+                      value={formData.oil.oilType || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, oil: { ...prev.oil, oilType: e.target.value } }))}
+                      placeholder="e.g., 5W-30 Synthetic"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <NumberField
+                    label="Change Interval (months)"
+                    value={formData.oil.changeIntervalMonths || 6}
+                    onChange={(v) => setFormData(prev => ({ ...prev, oil: { ...prev.oil, changeIntervalMonths: v } }))}
+                    min={1}
+                    max={24}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Brake Fluid */}
