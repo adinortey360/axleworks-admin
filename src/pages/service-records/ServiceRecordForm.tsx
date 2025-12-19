@@ -172,7 +172,7 @@ export function ServiceRecordForm() {
         serviceDate: existingRecord.isLastRecord
           ? new Date().toISOString().split('T')[0]
           : (existingRecord.serviceDate ? new Date(existingRecord.serviceDate).toISOString().split('T')[0] : defaultFormData.serviceDate),
-        oil: existingRecord.oil || defaultFormData.oil,
+        oil: { ...defaultFormData.oil, ...existingRecord.oil },
         brakeFluid: existingRecord.brakeFluid || defaultFormData.brakeFluid,
         transmissionFluid: existingRecord.transmissionFluid || defaultFormData.transmissionFluid,
         coolant: existingRecord.coolant || defaultFormData.coolant,
