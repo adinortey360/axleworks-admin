@@ -281,7 +281,7 @@ export function ServiceEntryForm() {
                 <NumberField label="Rear Left Pad %" value={formData.data.rearLeftPad || 100} onChange={(v) => updateData('rearLeftPad', v)} min={0} max={100} />
                 <NumberField label="Rear Right Pad %" value={formData.data.rearRightPad || 100} onChange={(v) => updateData('rearRightPad', v)} min={0} max={100} />
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <SelectField
                   label="Brake Fluid Level"
                   value={formData.data.fluidLevel || 'full'}
@@ -303,6 +303,13 @@ export function ServiceEntryForm() {
                     { value: 'dirty', label: 'Dirty' },
                     { value: 'contaminated', label: 'Contaminated' },
                   ]}
+                />
+                <NumberField
+                  label="Next Check (months)"
+                  value={formData.data.nextCheckMonths || 12}
+                  onChange={(v) => updateData('nextCheckMonths', v)}
+                  min={1}
+                  max={36}
                 />
                 <label className="flex items-center gap-2 cursor-pointer pt-6">
                   <input
@@ -360,7 +367,7 @@ export function ServiceEntryForm() {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 flex gap-4">
+              <div className="mt-4 flex flex-wrap gap-4 items-center">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -388,6 +395,15 @@ export function ServiceEntryForm() {
                   />
                   <span className="text-sm">Wheel Alignment</span>
                 </label>
+                <div className="ml-auto">
+                  <NumberField
+                    label="Next Rotation (months)"
+                    value={formData.data.nextRotationMonths || 6}
+                    onChange={(v) => updateData('nextRotationMonths', v)}
+                    min={1}
+                    max={24}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -399,7 +415,7 @@ export function ServiceEntryForm() {
             <CardHeader>
               <CardTitle>Battery Service Details</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <NumberField
                 label="Voltage"
                 value={formData.data.voltage || 12.6}
@@ -425,6 +441,13 @@ export function ServiceEntryForm() {
                 onChange={(v) => updateData('brand', v)}
                 placeholder="e.g., Interstate"
               />
+              <NumberField
+                label="Next Check (months)"
+                value={formData.data.nextCheckMonths || 12}
+                onChange={(v) => updateData('nextCheckMonths', v)}
+                min={1}
+                max={36}
+              />
               <label className="flex items-center gap-2 cursor-pointer pt-6">
                 <input
                   type="checkbox"
@@ -444,56 +467,67 @@ export function ServiceEntryForm() {
             <CardHeader>
               <CardTitle>Filter Service Details</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-3">Air Filter</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <SelectField
-                    label="Condition"
-                    value={formData.data.airFilterCondition || 'good'}
-                    onChange={(v) => updateData('airFilterCondition', v)}
-                    options={[
-                      { value: 'clean', label: 'Clean' },
-                      { value: 'good', label: 'Good' },
-                      { value: 'dirty', label: 'Dirty' },
-                      { value: 'replace', label: 'Replace' },
-                    ]}
-                  />
-                  <label className="flex items-center gap-2 cursor-pointer pt-6">
-                    <input
-                      type="checkbox"
-                      checked={formData.data.airFilterReplaced || false}
-                      onChange={(e) => updateData('airFilterReplaced', e.target.checked)}
-                      className="rounded border-gray-300"
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-3">Air Filter</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField
+                      label="Condition"
+                      value={formData.data.airFilterCondition || 'good'}
+                      onChange={(v) => updateData('airFilterCondition', v)}
+                      options={[
+                        { value: 'clean', label: 'Clean' },
+                        { value: 'good', label: 'Good' },
+                        { value: 'dirty', label: 'Dirty' },
+                        { value: 'replace', label: 'Replace' },
+                      ]}
                     />
-                    <span className="text-sm">Replaced</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer pt-6">
+                      <input
+                        type="checkbox"
+                        checked={formData.data.airFilterReplaced || false}
+                        onChange={(e) => updateData('airFilterReplaced', e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">Replaced</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-3">Cabin Air Filter</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField
+                      label="Condition"
+                      value={formData.data.cabinFilterCondition || 'good'}
+                      onChange={(v) => updateData('cabinFilterCondition', v)}
+                      options={[
+                        { value: 'clean', label: 'Clean' },
+                        { value: 'good', label: 'Good' },
+                        { value: 'dirty', label: 'Dirty' },
+                        { value: 'replace', label: 'Replace' },
+                      ]}
+                    />
+                    <label className="flex items-center gap-2 cursor-pointer pt-6">
+                      <input
+                        type="checkbox"
+                        checked={formData.data.cabinFilterReplaced || false}
+                        onChange={(e) => updateData('cabinFilterReplaced', e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">Replaced</span>
+                    </label>
+                  </div>
                 </div>
               </div>
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-3">Cabin Air Filter</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <SelectField
-                    label="Condition"
-                    value={formData.data.cabinFilterCondition || 'good'}
-                    onChange={(v) => updateData('cabinFilterCondition', v)}
-                    options={[
-                      { value: 'clean', label: 'Clean' },
-                      { value: 'good', label: 'Good' },
-                      { value: 'dirty', label: 'Dirty' },
-                      { value: 'replace', label: 'Replace' },
-                    ]}
-                  />
-                  <label className="flex items-center gap-2 cursor-pointer pt-6">
-                    <input
-                      type="checkbox"
-                      checked={formData.data.cabinFilterReplaced || false}
-                      onChange={(e) => updateData('cabinFilterReplaced', e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm">Replaced</span>
-                  </label>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <NumberField
+                  label="Next Check (months)"
+                  value={formData.data.nextCheckMonths || 12}
+                  onChange={(v) => updateData('nextCheckMonths', v)}
+                  min={1}
+                  max={24}
+                />
               </div>
             </CardContent>
           </Card>
@@ -630,6 +664,15 @@ export function ServiceEntryForm() {
                   </div>
                 </div>
               </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                <NumberField
+                  label="Next Check (months)"
+                  value={formData.data.nextCheckMonths || 12}
+                  onChange={(v) => updateData('nextCheckMonths', v)}
+                  min={1}
+                  max={36}
+                />
+              </div>
             </CardContent>
           </Card>
         );
@@ -640,57 +683,68 @@ export function ServiceEntryForm() {
             <CardHeader>
               <CardTitle>Wiper Service Details</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-3">Front Wipers</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <SelectField
-                    label="Condition"
-                    value={formData.data.frontWiperCondition || 'good'}
-                    onChange={(v) => updateData('frontWiperCondition', v)}
-                    options={[
-                      { value: 'good', label: 'Good' },
-                      { value: 'fair', label: 'Fair' },
-                      { value: 'streaking', label: 'Streaking' },
-                      { value: 'replace', label: 'Replace' },
-                    ]}
-                  />
-                  <label className="flex items-center gap-2 cursor-pointer pt-6">
-                    <input
-                      type="checkbox"
-                      checked={formData.data.frontWipersReplaced || false}
-                      onChange={(e) => updateData('frontWipersReplaced', e.target.checked)}
-                      className="rounded border-gray-300"
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-3">Front Wipers</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField
+                      label="Condition"
+                      value={formData.data.frontWiperCondition || 'good'}
+                      onChange={(v) => updateData('frontWiperCondition', v)}
+                      options={[
+                        { value: 'good', label: 'Good' },
+                        { value: 'fair', label: 'Fair' },
+                        { value: 'streaking', label: 'Streaking' },
+                        { value: 'replace', label: 'Replace' },
+                      ]}
                     />
-                    <span className="text-sm">Replaced</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer pt-6">
+                      <input
+                        type="checkbox"
+                        checked={formData.data.frontWipersReplaced || false}
+                        onChange={(e) => updateData('frontWipersReplaced', e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">Replaced</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-3">Rear Wiper</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField
+                      label="Condition"
+                      value={formData.data.rearWiperCondition || 'good'}
+                      onChange={(v) => updateData('rearWiperCondition', v)}
+                      options={[
+                        { value: 'good', label: 'Good' },
+                        { value: 'fair', label: 'Fair' },
+                        { value: 'streaking', label: 'Streaking' },
+                        { value: 'replace', label: 'Replace' },
+                        { value: 'n/a', label: 'N/A' },
+                      ]}
+                    />
+                    <label className="flex items-center gap-2 cursor-pointer pt-6">
+                      <input
+                        type="checkbox"
+                        checked={formData.data.rearWiperReplaced || false}
+                        onChange={(e) => updateData('rearWiperReplaced', e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">Replaced</span>
+                    </label>
+                  </div>
                 </div>
               </div>
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-3">Rear Wiper</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <SelectField
-                    label="Condition"
-                    value={formData.data.rearWiperCondition || 'good'}
-                    onChange={(v) => updateData('rearWiperCondition', v)}
-                    options={[
-                      { value: 'good', label: 'Good' },
-                      { value: 'fair', label: 'Fair' },
-                      { value: 'streaking', label: 'Streaking' },
-                      { value: 'replace', label: 'Replace' },
-                      { value: 'n/a', label: 'N/A' },
-                    ]}
-                  />
-                  <label className="flex items-center gap-2 cursor-pointer pt-6">
-                    <input
-                      type="checkbox"
-                      checked={formData.data.rearWiperReplaced || false}
-                      onChange={(e) => updateData('rearWiperReplaced', e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm">Replaced</span>
-                  </label>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <NumberField
+                  label="Next Check (months)"
+                  value={formData.data.nextCheckMonths || 6}
+                  onChange={(v) => updateData('nextCheckMonths', v)}
+                  min={1}
+                  max={24}
+                />
               </div>
             </CardContent>
           </Card>
@@ -702,89 +756,100 @@ export function ServiceEntryForm() {
             <CardHeader>
               <CardTitle>Light Check Details</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <SelectField
-                label="Headlights"
-                value={formData.data.headlights || 'working'}
-                onChange={(v) => updateData('headlights', v)}
-                options={[
-                  { value: 'working', label: 'Working' },
-                  { value: 'dim', label: 'Dim' },
-                  { value: 'one_out', label: 'One Out' },
-                  { value: 'both_out', label: 'Both Out' },
-                ]}
-              />
-              <SelectField
-                label="High Beams"
-                value={formData.data.highBeams || 'working'}
-                onChange={(v) => updateData('highBeams', v)}
-                options={[
-                  { value: 'working', label: 'Working' },
-                  { value: 'dim', label: 'Dim' },
-                  { value: 'one_out', label: 'One Out' },
-                  { value: 'both_out', label: 'Both Out' },
-                ]}
-              />
-              <SelectField
-                label="Taillights"
-                value={formData.data.taillights || 'working'}
-                onChange={(v) => updateData('taillights', v)}
-                options={[
-                  { value: 'working', label: 'Working' },
-                  { value: 'one_out', label: 'One Out' },
-                  { value: 'both_out', label: 'Both Out' },
-                ]}
-              />
-              <SelectField
-                label="Brake Lights"
-                value={formData.data.brakeLights || 'working'}
-                onChange={(v) => updateData('brakeLights', v)}
-                options={[
-                  { value: 'working', label: 'Working' },
-                  { value: 'one_out', label: 'One Out' },
-                  { value: 'all_out', label: 'All Out' },
-                ]}
-              />
-              <SelectField
-                label="Turn Signals"
-                value={formData.data.turnSignals || 'working'}
-                onChange={(v) => updateData('turnSignals', v)}
-                options={[
-                  { value: 'working', label: 'Working' },
-                  { value: 'front_issue', label: 'Front Issue' },
-                  { value: 'rear_issue', label: 'Rear Issue' },
-                  { value: 'not_working', label: 'Not Working' },
-                ]}
-              />
-              <SelectField
-                label="Hazard Lights"
-                value={formData.data.hazardLights || 'working'}
-                onChange={(v) => updateData('hazardLights', v)}
-                options={[
-                  { value: 'working', label: 'Working' },
-                  { value: 'not_working', label: 'Not Working' },
-                ]}
-              />
-              <SelectField
-                label="Fog Lights"
-                value={formData.data.fogLights || 'working'}
-                onChange={(v) => updateData('fogLights', v)}
-                options={[
-                  { value: 'working', label: 'Working' },
-                  { value: 'one_out', label: 'One Out' },
-                  { value: 'both_out', label: 'Both Out' },
-                  { value: 'n/a', label: 'N/A' },
-                ]}
-              />
-              <SelectField
-                label="License Plate Light"
-                value={formData.data.licensePlateLight || 'working'}
-                onChange={(v) => updateData('licensePlateLight', v)}
-                options={[
-                  { value: 'working', label: 'Working' },
-                  { value: 'out', label: 'Out' },
-                ]}
-              />
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <SelectField
+                  label="Headlights"
+                  value={formData.data.headlights || 'working'}
+                  onChange={(v) => updateData('headlights', v)}
+                  options={[
+                    { value: 'working', label: 'Working' },
+                    { value: 'dim', label: 'Dim' },
+                    { value: 'one_out', label: 'One Out' },
+                    { value: 'both_out', label: 'Both Out' },
+                  ]}
+                />
+                <SelectField
+                  label="High Beams"
+                  value={formData.data.highBeams || 'working'}
+                  onChange={(v) => updateData('highBeams', v)}
+                  options={[
+                    { value: 'working', label: 'Working' },
+                    { value: 'dim', label: 'Dim' },
+                    { value: 'one_out', label: 'One Out' },
+                    { value: 'both_out', label: 'Both Out' },
+                  ]}
+                />
+                <SelectField
+                  label="Taillights"
+                  value={formData.data.taillights || 'working'}
+                  onChange={(v) => updateData('taillights', v)}
+                  options={[
+                    { value: 'working', label: 'Working' },
+                    { value: 'one_out', label: 'One Out' },
+                    { value: 'both_out', label: 'Both Out' },
+                  ]}
+                />
+                <SelectField
+                  label="Brake Lights"
+                  value={formData.data.brakeLights || 'working'}
+                  onChange={(v) => updateData('brakeLights', v)}
+                  options={[
+                    { value: 'working', label: 'Working' },
+                    { value: 'one_out', label: 'One Out' },
+                    { value: 'all_out', label: 'All Out' },
+                  ]}
+                />
+                <SelectField
+                  label="Turn Signals"
+                  value={formData.data.turnSignals || 'working'}
+                  onChange={(v) => updateData('turnSignals', v)}
+                  options={[
+                    { value: 'working', label: 'Working' },
+                    { value: 'front_issue', label: 'Front Issue' },
+                    { value: 'rear_issue', label: 'Rear Issue' },
+                    { value: 'not_working', label: 'Not Working' },
+                  ]}
+                />
+                <SelectField
+                  label="Hazard Lights"
+                  value={formData.data.hazardLights || 'working'}
+                  onChange={(v) => updateData('hazardLights', v)}
+                  options={[
+                    { value: 'working', label: 'Working' },
+                    { value: 'not_working', label: 'Not Working' },
+                  ]}
+                />
+                <SelectField
+                  label="Fog Lights"
+                  value={formData.data.fogLights || 'working'}
+                  onChange={(v) => updateData('fogLights', v)}
+                  options={[
+                    { value: 'working', label: 'Working' },
+                    { value: 'one_out', label: 'One Out' },
+                    { value: 'both_out', label: 'Both Out' },
+                    { value: 'n/a', label: 'N/A' },
+                  ]}
+                />
+                <SelectField
+                  label="License Plate Light"
+                  value={formData.data.licensePlateLight || 'working'}
+                  onChange={(v) => updateData('licensePlateLight', v)}
+                  options={[
+                    { value: 'working', label: 'Working' },
+                    { value: 'out', label: 'Out' },
+                  ]}
+                />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <NumberField
+                  label="Next Check (months)"
+                  value={formData.data.nextCheckMonths || 12}
+                  onChange={(v) => updateData('nextCheckMonths', v)}
+                  min={1}
+                  max={24}
+                />
+              </div>
             </CardContent>
           </Card>
         );
@@ -879,6 +944,15 @@ export function ServiceEntryForm() {
                   />
                   <span className="text-sm">Exhaust OK</span>
                 </label>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <NumberField
+                  label="Next Inspection (months)"
+                  value={formData.data.nextCheckMonths || 12}
+                  onChange={(v) => updateData('nextCheckMonths', v)}
+                  min={1}
+                  max={24}
+                />
               </div>
             </CardContent>
           </Card>
