@@ -41,6 +41,118 @@ const defaultFormData: ServiceEntryData = {
   cost: 0,
 };
 
+// Default values for each service type to ensure fields are always populated
+const getDefaultDataForServiceType = (serviceType: ServiceType): Record<string, any> => {
+  switch (serviceType) {
+    case 'oil_change':
+      return {
+        oilBrand: '',
+        oilType: '',
+        changeIntervalMonths: 6,
+        nextChangeMileage: 0,
+        level: 'full',
+        condition: 'clean',
+      };
+    case 'brake_service':
+      return {
+        frontLeftPad: 100,
+        frontRightPad: 100,
+        rearLeftPad: 100,
+        rearRightPad: 100,
+        fluidLevel: 'full',
+        fluidCondition: 'clean',
+        fluidChanged: false,
+        nextCheckMonths: 12,
+        fluidNextChangeMonths: 24,
+      };
+    case 'tire_service':
+      return {
+        frontLeftTread: 8,
+        frontLeftPressure: 32,
+        frontLeftCondition: 'good',
+        frontRightTread: 8,
+        frontRightPressure: 32,
+        frontRightCondition: 'good',
+        rearLeftTread: 8,
+        rearLeftPressure: 32,
+        rearLeftCondition: 'good',
+        rearRightTread: 8,
+        rearRightPressure: 32,
+        rearRightCondition: 'good',
+        rotated: false,
+        balanced: false,
+        aligned: false,
+        nextRotationMonths: 6,
+      };
+    case 'battery_service':
+      return {
+        voltage: 12.6,
+        health: 'good',
+        brand: '',
+        replaced: false,
+        nextCheckMonths: 12,
+      };
+    case 'fluid_service':
+      return {
+        transFluidLevel: 'full',
+        transFluidCondition: 'clean',
+        transFluidChanged: false,
+        transFluidNextChangeMonths: 36,
+        coolantLevel: 'full',
+        coolantCondition: 'clean',
+        coolantChanged: false,
+        coolantNextChangeMonths: 24,
+        psFluidLevel: 'full',
+        psFluidChanged: false,
+        psFluidNextChangeMonths: 48,
+        washerFluidLevel: 'full',
+        washerFluidFilled: false,
+      };
+    case 'filter_service':
+      return {
+        airFilterCondition: 'good',
+        airFilterReplaced: false,
+        cabinFilterCondition: 'good',
+        cabinFilterReplaced: false,
+        nextCheckMonths: 12,
+      };
+    case 'wiper_service':
+      return {
+        frontWiperCondition: 'good',
+        frontWipersReplaced: false,
+        rearWiperCondition: 'good',
+        rearWipersReplaced: false,
+        nextCheckMonths: 6,
+      };
+    case 'light_check':
+      return {
+        headlights: 'working',
+        highBeams: 'working',
+        taillights: 'working',
+        brakeLights: 'working',
+        turnSignals: 'working',
+        hazardLights: 'working',
+        fogLights: 'working',
+        licensePlateLight: 'working',
+        nextCheckMonths: 12,
+      };
+    case 'general_inspection':
+      return {
+        exteriorCondition: 'good',
+        interiorCondition: 'good',
+        undercarriage: 'good',
+        engineBay: 'good',
+        beltsChecked: false,
+        hosesChecked: false,
+        suspensionChecked: false,
+        exhaustChecked: false,
+        nextCheckMonths: 12,
+      };
+    default:
+      return {};
+  }
+};
+
 // Field components defined outside to prevent re-creation on each render
 function NumberField({ label, value, onChange, min, max, step }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number }) {
   return (
@@ -285,7 +397,7 @@ export function ServiceEntryForm() {
                 <NumberField label="Rear Left Pad %" value={formData.data.rearLeftPad || 100} onChange={(v) => updateData('rearLeftPad', v)} min={0} max={100} />
                 <NumberField label="Rear Right Pad %" value={formData.data.rearRightPad || 100} onChange={(v) => updateData('rearRightPad', v)} min={0} max={100} />
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <SelectField
                   label="Brake Fluid Level"
                   value={formData.data.fluidLevel || 'full'}
@@ -309,11 +421,18 @@ export function ServiceEntryForm() {
                   ]}
                 />
                 <NumberField
-                  label="Next Check (months)"
+                  label="Next Pad Check (months)"
                   value={formData.data.nextCheckMonths || 12}
                   onChange={(v) => updateData('nextCheckMonths', v)}
                   min={1}
                   max={36}
+                />
+                <NumberField
+                  label="Next Fluid Change (months)"
+                  value={formData.data.fluidNextChangeMonths || 24}
+                  onChange={(v) => updateData('fluidNextChangeMonths', v)}
+                  min={1}
+                  max={60}
                 />
                 <label className="flex items-center gap-2 cursor-pointer pt-6">
                   <input
@@ -571,15 +690,24 @@ export function ServiceEntryForm() {
                       ]}
                     />
                   </div>
-                  <label className="flex items-center gap-2 cursor-pointer mt-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.data.transFluidChanged || false}
-                      onChange={(e) => updateData('transFluidChanged', e.target.checked)}
-                      className="rounded border-gray-300"
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.data.transFluidChanged || false}
+                        onChange={(e) => updateData('transFluidChanged', e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">Fluid Changed</span>
+                    </label>
+                    <NumberField
+                      label="Next Change (months)"
+                      value={formData.data.transFluidNextChangeMonths || 36}
+                      onChange={(v) => updateData('transFluidNextChangeMonths', v)}
+                      min={1}
+                      max={60}
                     />
-                    <span className="text-sm">Fluid Changed</span>
-                  </label>
+                  </div>
                 </div>
                 <div className="border rounded-lg p-4">
                   <h4 className="font-medium mb-3">Coolant</h4>
@@ -607,15 +735,24 @@ export function ServiceEntryForm() {
                       ]}
                     />
                   </div>
-                  <label className="flex items-center gap-2 cursor-pointer mt-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.data.coolantChanged || false}
-                      onChange={(e) => updateData('coolantChanged', e.target.checked)}
-                      className="rounded border-gray-300"
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.data.coolantChanged || false}
+                        onChange={(e) => updateData('coolantChanged', e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">Coolant Changed</span>
+                    </label>
+                    <NumberField
+                      label="Next Change (months)"
+                      value={formData.data.coolantNextChangeMonths || 24}
+                      onChange={(v) => updateData('coolantNextChangeMonths', v)}
+                      min={1}
+                      max={60}
                     />
-                    <span className="text-sm">Coolant Changed</span>
-                  </label>
+                  </div>
                 </div>
                 <div className="border rounded-lg p-4">
                   <h4 className="font-medium mb-3">Power Steering Fluid</h4>
@@ -631,16 +768,23 @@ export function ServiceEntryForm() {
                         { value: 'critical', label: 'Critical' },
                       ]}
                     />
-                    <label className="flex items-center gap-2 cursor-pointer pt-6">
-                      <input
-                        type="checkbox"
-                        checked={formData.data.psFluidChanged || false}
-                        onChange={(e) => updateData('psFluidChanged', e.target.checked)}
-                        className="rounded border-gray-300"
-                      />
-                      <span className="text-sm">Topped Up</span>
-                    </label>
+                    <NumberField
+                      label="Next Change (months)"
+                      value={formData.data.psFluidNextChangeMonths || 48}
+                      onChange={(v) => updateData('psFluidNextChangeMonths', v)}
+                      min={1}
+                      max={60}
+                    />
                   </div>
+                  <label className="flex items-center gap-2 cursor-pointer mt-3">
+                    <input
+                      type="checkbox"
+                      checked={formData.data.psFluidChanged || false}
+                      onChange={(e) => updateData('psFluidChanged', e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Topped Up</span>
+                  </label>
                 </div>
                 <div className="border rounded-lg p-4">
                   <h4 className="font-medium mb-3">Windshield Washer</h4>
@@ -667,15 +811,6 @@ export function ServiceEntryForm() {
                     </label>
                   </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
-                <NumberField
-                  label="Next Check (months)"
-                  value={formData.data.nextCheckMonths || 12}
-                  onChange={(v) => updateData('nextCheckMonths', v)}
-                  min={1}
-                  max={36}
-                />
               </div>
             </CardContent>
           </Card>
@@ -997,7 +1132,7 @@ export function ServiceEntryForm() {
             <SelectField
               label="Service Type"
               value={formData.serviceType}
-              onChange={(v) => setFormData(prev => ({ ...prev, serviceType: v as ServiceType, data: {} }))}
+              onChange={(v) => setFormData(prev => ({ ...prev, serviceType: v as ServiceType, data: getDefaultDataForServiceType(v as ServiceType) }))}
               options={SERVICE_TYPES}
             />
             <div>
