@@ -5,7 +5,6 @@ import { Plus, ArrowLeft, Trash2, Edit, Droplet, Disc, Circle, Battery, Filter, 
 import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
 import { PageLoading } from '../../components/ui/Loading';
 import api from '../../api/client';
 
