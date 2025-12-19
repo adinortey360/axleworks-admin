@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Save, Car } from 'lucide-react';
@@ -86,14 +86,6 @@ const conditionOptions: { value: ConditionOption; label: string }[] = [
   { value: 'very_dirty', label: 'Very Dirty' },
   { value: 'contaminated', label: 'Contaminated' },
   { value: 'burnt', label: 'Burnt' },
-];
-
-const tireConditionOptions: { value: TireCondition; label: string }[] = [
-  { value: 'not_checked', label: 'Not Checked' },
-  { value: 'good', label: 'Good' },
-  { value: 'fair', label: 'Fair' },
-  { value: 'worn', label: 'Worn' },
-  { value: 'replace', label: 'Replace' },
 ];
 
 const batteryHealthOptions: { value: BatteryHealth; label: string }[] = [
