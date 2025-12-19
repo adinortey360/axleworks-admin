@@ -16,6 +16,8 @@ import { EmployeesList } from './pages/employees/EmployeesList';
 import { ExpensesList } from './pages/expenses/ExpensesList';
 import { Reports } from './pages/reports/Reports';
 import { ServiceRecordForm } from './pages/service-records/ServiceRecordForm';
+import { ServiceEntriesList } from './pages/service-entries/ServiceEntriesList';
+import { ServiceEntryForm } from './pages/service-entries/ServiceEntryForm';
 
 function App() {
   return (
@@ -27,6 +29,9 @@ function App() {
         <Route path="customers" element={<CustomersList />} />
         <Route path="vehicles" element={<VehiclesList />} />
         <Route path="service-records/new" element={<ServiceRecordForm />} />
+        <Route path="service-entries" element={<ServiceEntriesList />} />
+        <Route path="service-entries/new" element={<ServiceEntryForm />} />
+        <Route path="service-entries/:id/edit" element={<ServiceEntryForm />} />
         <Route path="appointments" element={<AppointmentsList />} />
         <Route path="workorders" element={<WorkOrdersList />} />
         <Route path="estimates" element={<EstimatesList />} />

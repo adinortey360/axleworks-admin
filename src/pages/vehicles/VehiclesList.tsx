@@ -116,10 +116,10 @@ export function VehiclesList() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/service-records/new?vehicleId=${vehicle._id}`);
+                                navigate(`/service-entries?vehicleId=${vehicle._id}`);
                               }}
                               className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                              title="Record service"
+                              title="Service history"
                             >
                               <ClipboardList className="h-4 w-4" />
                             </button>
