@@ -143,24 +143,35 @@ export function ServiceRecordForm() {
   const [newRecommendation, setNewRecommendation] = useState('');
   const [newService, setNewService] = useState('');
 
-  // Fetch existing service record for editing
+  // Fetch existing service record for editing OR last service record for prepopulating new form
   const { data: existingRecord, isLoading: isLoadingRecord } = useQuery({
-    queryKey: ['service-record', recordId],
+    queryKey: ['service-record', recordId || `last-${vehicleId}`],
     queryFn: async () => {
-      if (!recordId) return null;
-      const res = await api.get(`/service-records/${recordId}`);
-      return res.data;
+      if (recordId) {
+        // Editing - fetch specific record
+        const res = await api.get(`/service-records/${recordId}`);
+        return res.data;
+      } else if (vehicleId) {
+        // New record - fetch last service record for this vehicle to prepopulate
+        const res = await api.get(`/service-records?vehicleId=${vehicleId}&limit=1`);
+        const records = res.data.data || res.data;
+        return records && records.length > 0 ? { ...records[0], isLastRecord: true } : null;
+      }
+      return null;
     },
-    enabled: !!recordId,
+    enabled: !!(recordId || vehicleId),
   });
 
-  // Populate form with existing data when editing
+  // Populate form with existing data
   useEffect(() => {
     if (existingRecord) {
       setFormData({
-        vehicleId: existingRecord.vehicleId?._id || existingRecord.vehicleId || '',
+        vehicleId: vehicleId || existingRecord.vehicleId?._id || existingRecord.vehicleId || '',
         mileageAtService: existingRecord.mileageAtService || 0,
-        serviceDate: existingRecord.serviceDate ? new Date(existingRecord.serviceDate).toISOString().split('T')[0] : defaultFormData.serviceDate,
+        // Keep today's date for new records, use existing date for edits
+        serviceDate: existingRecord.isLastRecord
+          ? new Date().toISOString().split('T')[0]
+          : (existingRecord.serviceDate ? new Date(existingRecord.serviceDate).toISOString().split('T')[0] : defaultFormData.serviceDate),
         oil: existingRecord.oil || defaultFormData.oil,
         brakeFluid: existingRecord.brakeFluid || defaultFormData.brakeFluid,
         transmissionFluid: existingRecord.transmissionFluid || defaultFormData.transmissionFluid,
@@ -174,12 +185,12 @@ export function ServiceRecordForm() {
         wipers: existingRecord.wipers || defaultFormData.wipers,
         lights: existingRecord.lights || defaultFormData.lights,
         overallHealth: existingRecord.overallHealth || defaultFormData.overallHealth,
-        notes: existingRecord.notes || '',
-        recommendations: existingRecord.recommendations || [],
-        servicesPerformed: existingRecord.servicesPerformed || [],
+        notes: existingRecord.isLastRecord ? '' : (existingRecord.notes || ''),
+        recommendations: existingRecord.isLastRecord ? [] : (existingRecord.recommendations || []),
+        servicesPerformed: existingRecord.isLastRecord ? [] : (existingRecord.servicesPerformed || []),
       });
     }
-  }, [existingRecord]);
+  }, [existingRecord, vehicleId]);
 
   // Fetch vehicle details
   const { data: vehicleData, isLoading: isLoadingVehicle } = useQuery({
