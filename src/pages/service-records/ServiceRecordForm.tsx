@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Save, Car } from 'lucide-react';
@@ -132,6 +132,8 @@ export function ServiceRecordForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const vehicleId = searchParams.get('vehicleId');
+  const recordId = searchParams.get('recordId');
+  const isEditMode = !!recordId;
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState<ServiceRecordData>({
@@ -141,15 +143,54 @@ export function ServiceRecordForm() {
   const [newRecommendation, setNewRecommendation] = useState('');
   const [newService, setNewService] = useState('');
 
+  // Fetch existing service record for editing
+  const { data: existingRecord, isLoading: isLoadingRecord } = useQuery({
+    queryKey: ['service-record', recordId],
+    queryFn: async () => {
+      if (!recordId) return null;
+      const res = await api.get(`/service-records/${recordId}`);
+      return res.data;
+    },
+    enabled: !!recordId,
+  });
+
+  // Populate form with existing data when editing
+  useEffect(() => {
+    if (existingRecord) {
+      setFormData({
+        vehicleId: existingRecord.vehicleId?._id || existingRecord.vehicleId || '',
+        mileageAtService: existingRecord.mileageAtService || 0,
+        serviceDate: existingRecord.serviceDate ? new Date(existingRecord.serviceDate).toISOString().split('T')[0] : defaultFormData.serviceDate,
+        oil: existingRecord.oil || defaultFormData.oil,
+        brakeFluid: existingRecord.brakeFluid || defaultFormData.brakeFluid,
+        transmissionFluid: existingRecord.transmissionFluid || defaultFormData.transmissionFluid,
+        coolant: existingRecord.coolant || defaultFormData.coolant,
+        powerSteeringFluid: existingRecord.powerSteeringFluid || defaultFormData.powerSteeringFluid,
+        brakePads: existingRecord.brakePads || defaultFormData.brakePads,
+        tires: existingRecord.tires || defaultFormData.tires,
+        battery: existingRecord.battery || defaultFormData.battery,
+        airFilter: existingRecord.airFilter || defaultFormData.airFilter,
+        cabinAirFilter: existingRecord.cabinAirFilter || defaultFormData.cabinAirFilter,
+        wipers: existingRecord.wipers || defaultFormData.wipers,
+        lights: existingRecord.lights || defaultFormData.lights,
+        overallHealth: existingRecord.overallHealth || defaultFormData.overallHealth,
+        notes: existingRecord.notes || '',
+        recommendations: existingRecord.recommendations || [],
+        servicesPerformed: existingRecord.servicesPerformed || [],
+      });
+    }
+  }, [existingRecord]);
+
   // Fetch vehicle details
   const { data: vehicleData } = useQuery({
-    queryKey: ['vehicle', vehicleId],
+    queryKey: ['vehicle', vehicleId || existingRecord?.vehicleId],
     queryFn: async () => {
-      if (!vehicleId) return null;
+      const vId = vehicleId || existingRecord?.vehicleId?._id || existingRecord?.vehicleId;
+      if (!vId) return null;
       const res = await api.get(`/vehicles?page=1&limit=100`);
-      return res.data.data?.find((v: any) => v._id === vehicleId);
+      return res.data.data?.find((v: any) => v._id === vId);
     },
-    enabled: !!vehicleId,
+    enabled: !!(vehicleId || existingRecord?.vehicleId),
   });
 
   // Create mutation
@@ -165,10 +206,32 @@ export function ServiceRecordForm() {
     },
   });
 
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async (data: ServiceRecordData) => {
+      const res = await api.put(`/service-records/${recordId}`, data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-records'] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['service-record', recordId] });
+      navigate('/vehicles');
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate(formData);
+    if (isEditMode) {
+      updateMutation.mutate(formData);
+    } else {
+      createMutation.mutate(formData);
+    }
   };
+
+  if (isEditMode && isLoadingRecord) {
+    return <div className="p-6">Loading...</div>;
+  }
 
   const addRecommendation = () => {
     if (newRecommendation.trim()) {
@@ -249,15 +312,15 @@ export function ServiceRecordForm() {
   return (
     <>
       <Header
-        title="New Service Record"
+        title={isEditMode ? "Edit Service Record" : "New Service Record"}
         subtitle={vehicleData ? `${vehicleData.year} ${vehicleData.make} ${vehicleData.model}` : 'Record maintenance data'}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" leftIcon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate(-1)}>
               Back
             </Button>
-            <Button leftIcon={<Save className="h-4 w-4" />} onClick={handleSubmit} disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Saving...' : 'Save Record'}
+            <Button leftIcon={<Save className="h-4 w-4" />} onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
+              {(createMutation.isPending || updateMutation.isPending) ? 'Saving...' : (isEditMode ? 'Update Record' : 'Save Record')}
             </Button>
           </div>
         }
