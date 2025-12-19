@@ -1,0 +1,166 @@
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Plus, Search, Phone, Mail, Car } from 'lucide-react';
+import { Header } from '../../components/layout/Header';
+import { Button } from '../../components/ui/Button';
+import { Card, CardContent } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { PageLoading } from '../../components/ui/Loading';
+import { formatCurrency, formatDate, formatPhone } from '../../utils';
+import api from '../../api/client';
+import type { Customer } from '../../types';
+
+export function CustomersList() {
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['customers', page, search],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), limit: '10' });
+      if (search) params.append('search', search);
+      const res = await api.get(`/workshop/customers?${params}`);
+      return res.data;
+    },
+  });
+
+  const customers = data?.data || [];
+  const pagination = data?.pagination;
+
+  return (
+    <>
+      <Header
+        title="Customers"
+        subtitle="Manage your customer database"
+        actions={
+          <Button leftIcon={<Plus className="h-4 w-4" />}>
+            Add Customer
+          </Button>
+        }
+      />
+
+      <div className="p-6">
+        {/* Search */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search customers..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+        </div>
+
+        {isLoading ? (
+          <PageLoading />
+        ) : (
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Customer</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Contact</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Vehicles</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Total Spent</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Last Visit</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {customers.map((customer: Customer) => (
+                      <tr key={customer._id} className="hover:bg-gray-50 cursor-pointer">
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-medium text-primary-600">
+                                {customer.firstName.charAt(0)}{customer.lastName.charAt(0)}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {customer.firstName} {customer.lastName}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {customer.visitCount} visits
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Phone className="h-3 w-3" />
+                              {formatPhone(customer.phone)}
+                            </div>
+                            {customer.email && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <Mail className="h-3 w-3" />
+                                {customer.email}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-2">
+                            <Car className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">
+                              {customer.vehicles?.length || 0} vehicles
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 font-medium text-gray-900">
+                          {formatCurrency(customer.totalSpent)}
+                        </td>
+                        <td className="py-4 px-4 text-sm text-gray-500">
+                          {customer.lastVisit ? formatDate(customer.lastVisit) : 'Never'}
+                        </td>
+                        <td className="py-4 px-4">
+                          <Badge variant={customer.isActive ? 'success' : 'default'}>
+                            {customer.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {pagination && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+                  <p className="text-sm text-gray-500">
+                    Showing {(page - 1) * pagination.limit + 1} to{' '}
+                    {Math.min(page * pagination.limit, pagination.total)} of {pagination.total}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => p - 1)}
+                      disabled={page === 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => p + 1)}
+                      disabled={page >= pagination.pages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </>
+  );
+}

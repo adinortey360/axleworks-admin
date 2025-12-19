@@ -1,0 +1,45 @@
+import { Routes, Route } from 'react-router-dom';
+import { Layout } from './components/layout/Layout';
+import { Login } from './pages/Login';
+import { Dashboard } from './pages/Dashboard';
+import { AppUsersList } from './pages/users/AppUsersList';
+import { CustomersList } from './pages/customers/CustomersList';
+import { VehiclesList } from './pages/vehicles/VehiclesList';
+import { AppointmentsList } from './pages/appointments/AppointmentsList';
+import { WorkOrdersList } from './pages/workorders/WorkOrdersList';
+import { EstimatesList } from './pages/estimates/EstimatesList';
+import { InvoicesList } from './pages/invoices/InvoicesList';
+import { PaymentsList } from './pages/payments/PaymentsList';
+import { InventoryList } from './pages/inventory/InventoryList';
+import { SuppliersList } from './pages/suppliers/SuppliersList';
+import { EmployeesList } from './pages/employees/EmployeesList';
+import { ExpensesList } from './pages/expenses/ExpensesList';
+import { Reports } from './pages/reports/Reports';
+import { ServiceRecordForm } from './pages/service-records/ServiceRecordForm';
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="app-users" element={<AppUsersList />} />
+        <Route path="customers" element={<CustomersList />} />
+        <Route path="vehicles" element={<VehiclesList />} />
+        <Route path="service-records/new" element={<ServiceRecordForm />} />
+        <Route path="appointments" element={<AppointmentsList />} />
+        <Route path="workorders" element={<WorkOrdersList />} />
+        <Route path="estimates" element={<EstimatesList />} />
+        <Route path="invoices" element={<InvoicesList />} />
+        <Route path="payments" element={<PaymentsList />} />
+        <Route path="inventory" element={<InventoryList />} />
+        <Route path="suppliers" element={<SuppliersList />} />
+        <Route path="employees" element={<EmployeesList />} />
+        <Route path="expenses" element={<ExpensesList />} />
+        <Route path="reports" element={<Reports />} />
+      </Route>
+    </Routes>
+  );
+}
+
+export default App;
