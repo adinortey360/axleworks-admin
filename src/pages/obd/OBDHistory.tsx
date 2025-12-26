@@ -89,7 +89,7 @@ export function OBDHistory() {
   });
 
   // Fetch OBD history data
-  const { data: historyData, isLoading, refetch, isFetching } = useQuery({
+  const { data: historyData, isLoading, isFetching } = useQuery({
     queryKey: ['obd-history', vehicleId, timeRange, selectedMetrics],
     queryFn: async () => {
       if (!vehicleId) return { data: [], pagination: { total: 0 } };
