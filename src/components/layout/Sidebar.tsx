@@ -18,6 +18,7 @@ import {
   Settings,
   LogOut,
   Wrench,
+  Activity,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -26,6 +27,7 @@ const navigation = [
   { name: 'App Users', href: '/app-users', icon: Smartphone },
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Vehicles', href: '/vehicles', icon: Car },
+  { name: 'OBD Monitor', href: '/obd-monitor', icon: Activity },
   { name: 'Appointments', href: '/appointments', icon: Calendar },
   { name: 'Work Orders', href: '/workorders', icon: ClipboardList },
   { name: 'Estimates', href: '/estimates', icon: FileText },
