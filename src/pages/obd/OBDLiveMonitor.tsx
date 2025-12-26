@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
@@ -20,6 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
   CheckCircle,
+  TrendingUp,
 } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
@@ -638,6 +639,17 @@ export function OBDLiveMonitor() {
               <Badge status="info">
                 {activeStreamCount} Active Stream{activeStreamCount !== 1 ? 's' : ''}
               </Badge>
+            )}
+            {selectedVehicleId && (
+              <Link to={`/obd-history?vehicleId=${selectedVehicleId}`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<TrendingUp className="h-4 w-4" />}
+                >
+                  View History
+                </Button>
+              </Link>
             )}
             <Button
               variant="outline"
