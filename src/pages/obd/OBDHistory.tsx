@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -19,14 +19,18 @@ import {
   ChevronLeft,
   Database,
   Download,
-  RefreshCw,
   TrendingUp,
+  Radio,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import { format, subHours, subDays, subMinutes } from 'date-fns';
 import { Header } from '../../components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
 import { PageLoading } from '../../components/ui/Loading';
+import { useOBDWebSocket } from '../../hooks/useOBDWebSocket';
 import api from '../../api/client';
 
 // Available metrics to graph
@@ -58,13 +62,64 @@ const TIME_RANGES = [
   { label: 'All Data', value: 'all', getFrom: () => null },
 ];
 
+// Max live data points to keep in memory
+const MAX_LIVE_POINTS = 300; // 5 minutes at 1 point/second
+
 export function OBDHistory() {
   const [searchParams] = useSearchParams();
   const vehicleId = searchParams.get('vehicleId');
 
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['rpm', 'speed']);
-  const [timeRange, setTimeRange] = useState('1h');
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [timeRange, setTimeRange] = useState('5m');
+  const [liveMode, setLiveMode] = useState(true); // Default to live mode
+  const [liveData, setLiveData] = useState<any[]>([]);
+  const liveDataRef = useRef<any[]>([]);
+
+  // WebSocket for live data
+  const {
+    isConnected,
+    status,
+    vehicleStreams,
+    connect,
+    subscribeToVehicle,
+  } = useOBDWebSocket();
+
+  // Connect and subscribe when in live mode
+  useEffect(() => {
+    if (liveMode && vehicleId) {
+      if (status === 'disconnected') {
+        connect();
+      } else if (isConnected) {
+        subscribeToVehicle(vehicleId);
+      }
+    }
+  }, [liveMode, vehicleId, status, isConnected, connect, subscribeToVehicle]);
+
+  // Handle incoming live data
+  const vehicleStream = vehicleId ? vehicleStreams.get(vehicleId) : null;
+
+  useEffect(() => {
+    if (liveMode && vehicleStream?.data && vehicleStream.lastUpdate) {
+      const newPoint = {
+        ...vehicleStream.data,
+        timestamp: vehicleStream.lastUpdate.toISOString(),
+        time: vehicleStream.lastUpdate.getTime(),
+        timeLabel: format(vehicleStream.lastUpdate, 'HH:mm:ss'),
+      };
+
+      // Add to live data, keeping max points
+      liveDataRef.current = [...liveDataRef.current, newPoint].slice(-MAX_LIVE_POINTS);
+      setLiveData([...liveDataRef.current]);
+    }
+  }, [liveMode, vehicleStream?.lastUpdate]);
+
+  // Clear live data when switching modes or vehicles
+  useEffect(() => {
+    if (!liveMode) {
+      liveDataRef.current = [];
+      setLiveData([]);
+    }
+  }, [liveMode, vehicleId]);
 
   // Fetch vehicle info
   const { data: vehicleData } = useQuery({
@@ -88,8 +143,8 @@ export function OBDHistory() {
     enabled: !!vehicleId,
   });
 
-  // Fetch OBD history data
-  const { data: historyData, isLoading, isFetching } = useQuery({
+  // Fetch OBD history data (only when not in live mode)
+  const { data: historyData, isLoading } = useQuery({
     queryKey: ['obd-history', vehicleId, timeRange, selectedMetrics],
     queryFn: async () => {
       if (!vehicleId) return { data: [], pagination: { total: 0 } };
@@ -116,19 +171,21 @@ export function OBDHistory() {
       const res = await api.get(`/vehicles/${vehicleId}/obd-data`, { params });
       return res.data;
     },
-    enabled: !!vehicleId,
-    refetchInterval: autoRefresh ? 5000 : false,
+    enabled: !!vehicleId && !liveMode,
   });
 
-  // Format data for charts
+  // Format data for charts - use live data in live mode, otherwise historical
   const chartData = useMemo(() => {
+    if (liveMode) {
+      return liveData;
+    }
     if (!historyData?.data) return [];
     return historyData.data.map((d: any) => ({
       ...d,
       time: new Date(d.timestamp).getTime(),
       timeLabel: format(new Date(d.timestamp), 'HH:mm:ss'),
     }));
-  }, [historyData]);
+  }, [liveMode, liveData, historyData]);
 
   const toggleMetric = (key: string) => {
     setSelectedMetrics(prev =>
@@ -182,10 +239,29 @@ export function OBDHistory() {
   return (
     <>
       <Header
-        title="OBD Data History"
+        title={liveMode ? "OBD Live Charts" : "OBD Data History"}
         subtitle={vehicleData ? `${vehicleData.year} ${vehicleData.make} ${vehicleData.model}` : 'Loading...'}
         actions={
           <div className="flex items-center gap-3">
+            {liveMode && (
+              isConnected ? (
+                <Badge status="good" className="flex items-center gap-1">
+                  <Wifi className="h-3 w-3" />
+                  {vehicleStream?.isStreaming ? 'Streaming' : 'Connected'}
+                </Badge>
+              ) : (
+                <Badge status="inactive" className="flex items-center gap-1">
+                  <WifiOff className="h-3 w-3" />
+                  {status === 'connecting' ? 'Connecting...' : 'Disconnected'}
+                </Badge>
+              )
+            )}
+            {liveMode && (
+              <Badge status="info" className="flex items-center gap-1">
+                <Activity className="h-3 w-3" />
+                {liveData.length} points
+              </Badge>
+            )}
             <Link to={`/obd-monitor?vehicleId=${vehicleId}`}>
               <Button variant="outline" size="sm" leftIcon={<ChevronLeft className="h-4 w-4" />}>
                 Back to Monitor
@@ -201,20 +277,55 @@ export function OBDHistory() {
               Export CSV
             </Button>
             <Button
-              variant={autoRefresh ? 'primary' : 'outline'}
+              variant={liveMode ? 'primary' : 'outline'}
               size="sm"
-              leftIcon={<RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />}
-              onClick={() => setAutoRefresh(!autoRefresh)}
+              leftIcon={<Radio className={`h-4 w-4 ${liveMode && vehicleStream?.isStreaming ? 'animate-pulse' : ''}`} />}
+              onClick={() => setLiveMode(!liveMode)}
             >
-              {autoRefresh ? 'Auto-Refresh On' : 'Auto-Refresh'}
+              {liveMode ? 'Live Mode' : 'History Mode'}
             </Button>
           </div>
         }
       />
 
       <div className="p-6 space-y-6">
-        {/* Stats Card */}
-        {statsData && (
+        {/* Live Mode Info */}
+        {liveMode && (
+          <Card className={vehicleStream?.isStreaming ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Radio className={`h-6 w-6 ${vehicleStream?.isStreaming ? 'text-green-600 animate-pulse' : 'text-yellow-600'}`} />
+                  <div>
+                    <p className={`font-medium ${vehicleStream?.isStreaming ? 'text-green-900' : 'text-yellow-900'}`}>
+                      {vehicleStream?.isStreaming ? 'Receiving Live Data' : 'Waiting for Vehicle Stream'}
+                    </p>
+                    <p className={`text-sm ${vehicleStream?.isStreaming ? 'text-green-700' : 'text-yellow-700'}`}>
+                      {vehicleStream?.isStreaming
+                        ? `Chart updates in real-time as data arrives (${liveData.length}/${MAX_LIVE_POINTS} points)`
+                        : 'Start the OBD stream from the mobile app to see live data'}
+                    </p>
+                  </div>
+                </div>
+                {liveData.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      liveDataRef.current = [];
+                      setLiveData([]);
+                    }}
+                  >
+                    Clear Data
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Stats Card - History Mode Only */}
+        {!liveMode && statsData && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
@@ -269,29 +380,31 @@ export function OBDHistory() {
           </div>
         )}
 
-        {/* Time Range Selector */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Time Range</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {TIME_RANGES.map(range => (
-                <button
-                  key={range.value}
-                  onClick={() => setTimeRange(range.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    timeRange === range.value
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {range.label}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Time Range Selector - History Mode Only */}
+        {!liveMode && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Time Range</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {TIME_RANGES.map(range => (
+                  <button
+                    key={range.value}
+                    onClick={() => setTimeRange(range.value)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      timeRange === range.value
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {range.label}
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Metric Selector */}
         <Card>
