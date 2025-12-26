@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -13,6 +13,13 @@ import {
   RefreshCw,
   Car,
   Zap,
+  Clock,
+  Wind,
+  Settings,
+  Wrench,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle,
 } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
@@ -82,6 +89,49 @@ function GaugeCard({
   );
 }
 
+// Collapsible section component
+function CollapsibleSection({
+  title,
+  icon: Icon,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between text-sm font-medium text-gray-500 mb-2 hover:text-gray-700"
+      >
+        <span className="flex items-center gap-2">
+          <Icon className="h-4 w-4" />
+          {title}
+        </span>
+        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </button>
+      {isOpen && children}
+    </div>
+  );
+}
+
+// Format runtime as hours:minutes:seconds
+function formatRuntime(seconds: number | undefined): string {
+  if (seconds == null) return '--';
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  if (hrs > 0) {
+    return `${hrs}h ${mins}m`;
+  }
+  return `${mins}m ${secs}s`;
+}
+
 // Live stream card for a vehicle
 function VehicleStreamCard({ stream }: { stream: VehicleStream }) {
   const data = stream.data;
@@ -124,12 +174,60 @@ function VehicleStreamCard({ stream }: { stream: VehicleStream }) {
         </div>
       </div>
 
-      {/* Engine & Performance */}
+      {/* Diagnostics - Always show at top */}
       <div>
         <h4 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-          <Zap className="h-4 w-4" />
-          Engine & Performance
+          <AlertTriangle className="h-4 w-4" />
+          Diagnostics
         </h4>
+        {data?.milStatus || (data?.activeDTCs && data.activeDTCs.length > 0) ? (
+          <Card className="bg-red-50 border-red-200">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium text-red-900">Check Engine Light Active</p>
+                  <p className="text-sm text-red-700 mt-1">
+                    {data?.dtcCount ?? 0} Trouble Code{(data?.dtcCount ?? 0) !== 1 ? 's' : ''} Detected
+                  </p>
+                  {data?.activeDTCs && data.activeDTCs.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {data.activeDTCs.map((dtc) => (
+                        <span
+                          key={dtc}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-mono font-medium bg-red-100 text-red-800"
+                        >
+                          {dtc}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {data?.distanceWithMIL != null && data.distanceWithMIL > 0 && (
+                    <p className="text-xs text-red-600 mt-2">
+                      Distance with MIL: {data.distanceWithMIL} km
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="bg-green-50 border-green-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+                <div>
+                  <p className="font-medium text-green-900">No Trouble Codes</p>
+                  <p className="text-sm text-green-700">Check engine light is off</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Engine & Performance */}
+      <CollapsibleSection title="Engine & Performance" icon={Zap}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <GaugeCard
             title="RPM"
@@ -161,26 +259,22 @@ function VehicleStreamCard({ stream }: { stream: VehicleStream }) {
             danger={95}
           />
           <GaugeCard
-            title="Throttle"
-            value={data?.throttlePosition}
-            unit="%"
-            icon={Activity}
-            min={0}
-            max={100}
-            color="purple"
+            title="Timing Advance"
+            value={data?.timingAdvance}
+            unit="°"
+            icon={Clock}
+            min={-10}
+            max={50}
+            color="green"
           />
         </div>
-      </div>
+      </CollapsibleSection>
 
-      {/* Temperature & Fuel */}
-      <div>
-        <h4 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-          <Thermometer className="h-4 w-4" />
-          Temperature & Fuel
-        </h4>
+      {/* Temperatures */}
+      <CollapsibleSection title="Temperatures" icon={Thermometer}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <GaugeCard
-            title="Coolant Temp"
+            title="Coolant"
             value={data?.coolantTemp}
             unit="°C"
             icon={Thermometer}
@@ -191,7 +285,7 @@ function VehicleStreamCard({ stream }: { stream: VehicleStream }) {
           />
           <GaugeCard
             title="Intake Air"
-            value={data?.intakeAirTemp}
+            value={data?.intakeTemp}
             unit="°C"
             icon={Thermometer}
             min={-20}
@@ -200,6 +294,31 @@ function VehicleStreamCard({ stream }: { stream: VehicleStream }) {
             danger={60}
             color="blue"
           />
+          <GaugeCard
+            title="Ambient"
+            value={data?.ambientTemp}
+            unit="°C"
+            icon={Thermometer}
+            min={-20}
+            max={50}
+            color="green"
+          />
+          <GaugeCard
+            title="Catalyst"
+            value={data?.catalystTemp}
+            unit="°C"
+            icon={Thermometer}
+            min={0}
+            max={900}
+            warning={700}
+            danger={800}
+          />
+        </div>
+      </CollapsibleSection>
+
+      {/* Fuel System */}
+      <CollapsibleSection title="Fuel System" icon={Fuel}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <GaugeCard
             title="Fuel Level"
             value={data?.fuelLevel}
@@ -210,31 +329,47 @@ function VehicleStreamCard({ stream }: { stream: VehicleStream }) {
             color="green"
           />
           <GaugeCard
-            title="Battery"
-            value={data?.batteryVoltage}
-            unit="V"
-            icon={Battery}
-            min={10}
-            max={15}
-            warning={11.5}
-            danger={11}
-            color="yellow"
+            title="Fuel Pressure"
+            value={data?.fuelPressure}
+            unit="kPa"
+            icon={Gauge}
+            min={0}
+            max={400}
+            color="blue"
+          />
+          <GaugeCard
+            title="Short Fuel Trim"
+            value={data?.shortTermFuelTrim}
+            unit="%"
+            icon={Activity}
+            min={-25}
+            max={25}
+            warning={15}
+            danger={20}
+            color="purple"
+          />
+          <GaugeCard
+            title="Long Fuel Trim"
+            value={data?.longTermFuelTrim}
+            unit="%"
+            icon={Activity}
+            min={-25}
+            max={25}
+            warning={10}
+            danger={15}
+            color="purple"
           />
         </div>
-      </div>
+      </CollapsibleSection>
 
-      {/* Sensors */}
-      <div>
-        <h4 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-          <Activity className="h-4 w-4" />
-          Sensors
-        </h4>
+      {/* Air & Pressure */}
+      <CollapsibleSection title="Air & Pressure" icon={Wind}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <GaugeCard
             title="MAF"
-            value={data?.mafAirFlow}
+            value={data?.maf}
             unit="g/s"
-            icon={Activity}
+            icon={Wind}
             min={0}
             max={300}
             color="blue"
@@ -249,12 +384,12 @@ function VehicleStreamCard({ stream }: { stream: VehicleStream }) {
             color="purple"
           />
           <GaugeCard
-            title="Timing"
-            value={data?.timingAdvance}
-            unit="°"
-            icon={Activity}
-            min={-10}
-            max={50}
+            title="Barometric"
+            value={data?.barometricPressure}
+            unit="kPa"
+            icon={Gauge}
+            min={90}
+            max={110}
             color="green"
           />
           <GaugeCard
@@ -267,32 +402,149 @@ function VehicleStreamCard({ stream }: { stream: VehicleStream }) {
             color="purple"
           />
         </div>
-      </div>
+      </CollapsibleSection>
 
-      {/* Diagnostics */}
-      {(data?.milStatus || (data?.activeDTCs && data.activeDTCs.length > 0)) && (
-        <div>
-          <h4 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Diagnostics
-          </h4>
-          <Card className="bg-red-50 border-red-200">
+      {/* Throttle & Pedal */}
+      <CollapsibleSection title="Throttle & Pedal" icon={Settings} defaultOpen={false}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <GaugeCard
+            title="Throttle Position"
+            value={data?.throttlePosition}
+            unit="%"
+            icon={Activity}
+            min={0}
+            max={100}
+            color="purple"
+          />
+          <GaugeCard
+            title="Relative Throttle"
+            value={data?.relativeThrottle}
+            unit="%"
+            icon={Activity}
+            min={0}
+            max={100}
+            color="blue"
+          />
+          <GaugeCard
+            title="Accelerator D"
+            value={data?.acceleratorPedalD}
+            unit="%"
+            icon={Activity}
+            min={0}
+            max={100}
+            color="green"
+          />
+          <GaugeCard
+            title="Commanded Throttle"
+            value={data?.commandedThrottle}
+            unit="%"
+            icon={Activity}
+            min={0}
+            max={100}
+            color="purple"
+          />
+        </div>
+      </CollapsibleSection>
+
+      {/* Electrical */}
+      <CollapsibleSection title="Electrical" icon={Battery}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <GaugeCard
+            title="Battery"
+            value={data?.batteryVoltage}
+            unit="V"
+            icon={Battery}
+            min={10}
+            max={15}
+            warning={11.5}
+            danger={11}
+            color="yellow"
+          />
+          <GaugeCard
+            title="Control Module"
+            value={data?.controlModuleVoltage}
+            unit="V"
+            icon={Battery}
+            min={10}
+            max={16}
+            color="blue"
+          />
+        </div>
+      </CollapsibleSection>
+
+      {/* EGR & Emissions */}
+      <CollapsibleSection title="EGR & Emissions" icon={Wind} defaultOpen={false}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <GaugeCard
+            title="Commanded EGR"
+            value={data?.commandedEGR}
+            unit="%"
+            icon={Activity}
+            min={0}
+            max={100}
+            color="green"
+          />
+          <GaugeCard
+            title="EGR Error"
+            value={data?.egrError}
+            unit="%"
+            icon={Activity}
+            min={-20}
+            max={20}
+            warning={10}
+            danger={15}
+            color="purple"
+          />
+        </div>
+      </CollapsibleSection>
+
+      {/* Maintenance Info */}
+      <CollapsibleSection title="Maintenance Info" icon={Wrench} defaultOpen={false}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
-                <div>
-                  <p className="font-medium text-red-900">Check Engine Light Active</p>
-                  {data.activeDTCs && data.activeDTCs.length > 0 && (
-                    <p className="text-sm text-red-700">
-                      DTCs: {data.activeDTCs.join(', ')}
-                    </p>
-                  )}
-                </div>
+              <div className="flex items-center gap-2 text-gray-500 mb-1">
+                <Clock className="h-4 w-4" />
+                <span className="text-sm font-medium">Engine Runtime</span>
               </div>
+              <span className="text-xl font-bold text-gray-900">
+                {formatRuntime(data?.engineRuntime)}
+              </span>
             </CardContent>
           </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-gray-500 mb-1">
+                <Activity className="h-4 w-4" />
+                <span className="text-sm font-medium">Distance Since DTC Clear</span>
+              </div>
+              <span className="text-xl font-bold text-gray-900">
+                {data?.distanceSinceDTCCleared != null ? `${data.distanceSinceDTCCleared} km` : '--'}
+              </span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-gray-500 mb-1">
+                <Thermometer className="h-4 w-4" />
+                <span className="text-sm font-medium">Warmups Since Clear</span>
+              </div>
+              <span className="text-xl font-bold text-gray-900">
+                {data?.warmupsSinceDTCCleared ?? '--'}
+              </span>
+            </CardContent>
+          </Card>
+          <GaugeCard
+            title="Absolute Load"
+            value={data?.absoluteLoad}
+            unit="%"
+            icon={Gauge}
+            min={0}
+            max={100}
+            color="blue"
+          />
         </div>
-      )}
+      </CollapsibleSection>
     </div>
   );
 }

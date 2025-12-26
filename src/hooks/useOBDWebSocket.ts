@@ -11,27 +11,67 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://axleworks-api.onrender.
 const WS_URL = API_URL.replace(/^http/, 'ws') + '/ws';
 
 export interface OBDData {
+  // Engine & Performance
   rpm?: number;
-  engineLoad?: number;
-  coolantTemp?: number;
   speed?: number;
+  engineLoad?: number;
   throttlePosition?: number;
+
+  // Temperatures
+  coolantTemp?: number;
+  engineTemp?: number;
+  intakeTemp?: number;
+  ambientTemp?: number;
+  catalystTemp?: number;
+
+  // Fuel System
   fuelLevel?: number;
+  fuelLevelInput?: number;
+  fuelPressure?: number;
   shortTermFuelTrim?: number;
   longTermFuelTrim?: number;
-  intakeAirTemp?: number;
-  mafAirFlow?: number;
+
+  // Air & Pressure
+  maf?: number;
+  massAirFlow?: number;
   manifoldPressure?: number;
-  timingAdvance?: number;
   barometricPressure?: number;
-  ambientAirTemp?: number;
-  catalystTemp?: number;
+  boostPressure?: number;
+
+  // Timing & Engine
+  timingAdvance?: number;
+  engineRuntime?: number;
+
+  // Electrical
   batteryVoltage?: number;
   controlModuleVoltage?: number;
+
+  // Throttle & Pedal
+  relativeThrottle?: number;
+  absoluteThrottleB?: number;
+  acceleratorPedalD?: number;
+  acceleratorPedalE?: number;
+  commandedThrottle?: number;
+
+  // EGR
+  commandedEGR?: number;
+  egrError?: number;
+
+  // Diagnostics
   milStatus?: boolean;
   dtcCount?: number;
   activeDTCs?: string[];
-  boostPressure?: number;
+
+  // Distance/Maintenance
+  distanceWithMIL?: number;
+  distanceSinceDTCCleared?: number;
+  warmupsSinceDTCCleared?: number;
+
+  // Advanced
+  absoluteLoad?: number;
+  commandedAirFuelRatio?: number;
+
+  // Metadata
   timestamp?: string;
 }
 
