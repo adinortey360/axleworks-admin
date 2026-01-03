@@ -11,6 +11,8 @@ import {
   Smartphone,
   Edit,
   User,
+  Activity,
+  ClipboardList,
 } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
@@ -305,44 +307,61 @@ export function CustomerDetails() {
                   {vehicles.map((vehicle) => (
                     <div
                       key={vehicle._id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/vehicles?search=${vehicle.licensePlate || vehicle.vin}`)}
+                      className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-white rounded-lg shadow-sm">
-                          <Car className="h-6 w-6 text-gray-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {vehicle.year} {vehicle.make} {vehicle.model}
-                          </p>
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
-                            {vehicle.licensePlate && (
-                              <span>Plate: {vehicle.licensePlate}</span>
-                            )}
-                            {vehicle.vin && <span>VIN: {vehicle.vin}</span>}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-white rounded-lg shadow-sm">
+                            <Car className="h-6 w-6 text-gray-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {vehicle.year} {vehicle.make} {vehicle.model}
+                            </p>
+                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                              {vehicle.licensePlate && (
+                                <span>Plate: {vehicle.licensePlate}</span>
+                              )}
+                              {vehicle.vin && <span>VIN: {vehicle.vin}</span>}
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-2">
+                          {vehicle.healthStatus && (
+                            <Badge
+                              variant={
+                                vehicle.healthStatus === 'excellent' || vehicle.healthStatus === 'good'
+                                  ? 'success'
+                                  : vehicle.healthStatus === 'fair'
+                                  ? 'warning'
+                                  : 'danger'
+                              }
+                            >
+                              {vehicle.healthStatus}
+                            </Badge>
+                          )}
+                          {vehicle.mileage && (
+                            <span className="text-sm text-gray-500">
+                              {vehicle.mileage.toLocaleString()} km
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        {vehicle.healthStatus && (
-                          <Badge
-                            variant={
-                              vehicle.healthStatus === 'excellent' || vehicle.healthStatus === 'good'
-                                ? 'success'
-                                : vehicle.healthStatus === 'fair'
-                                ? 'warning'
-                                : 'danger'
-                            }
-                          >
-                            {vehicle.healthStatus}
-                          </Badge>
-                        )}
-                        {vehicle.mileage && (
-                          <span className="text-sm text-gray-500">
-                            {vehicle.mileage.toLocaleString()} km
-                          </span>
-                        )}
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200">
+                        <button
+                          onClick={() => navigate(`/obd-monitor?vehicleId=${vehicle._id}`)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-lg transition-colors"
+                        >
+                          <Activity className="h-4 w-4" />
+                          OBD Monitor
+                        </button>
+                        <button
+                          onClick={() => navigate(`/service-entries?vehicleId=${vehicle._id}`)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary-700 bg-primary-100 hover:bg-primary-200 rounded-lg transition-colors"
+                        >
+                          <ClipboardList className="h-4 w-4" />
+                          Service History
+                        </button>
                       </div>
                     </div>
                   ))}

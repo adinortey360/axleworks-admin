@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Car, Trash2, ClipboardList } from 'lucide-react';
+import { Plus, Search, Car, Trash2, ClipboardList, Activity } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
@@ -113,6 +113,16 @@ export function VehiclesList() {
                         </td>
                         <td className="py-4 px-4 text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/obd-monitor?vehicleId=${vehicle._id}`);
+                              }}
+                              className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="OBD Monitor"
+                            >
+                              <Activity className="h-4 w-4" />
+                            </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
