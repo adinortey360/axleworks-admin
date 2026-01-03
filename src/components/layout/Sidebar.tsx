@@ -2,7 +2,6 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '../../utils';
 import {
   LayoutDashboard,
-  Smartphone,
   Users,
   Car,
   Calendar,
@@ -24,7 +23,6 @@ import { useAuth } from '../../context/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'App Users', href: '/app-users', icon: Smartphone },
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Vehicles', href: '/vehicles', icon: Car },
   { name: 'OBD Monitor', href: '/obd-monitor', icon: Activity },

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Search, Phone, Mail, Car } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Search, Phone, Mail, Car, Smartphone } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
@@ -11,6 +12,7 @@ import api from '../../api/client';
 import type { Customer } from '../../types';
 
 export function CustomersList() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -65,6 +67,7 @@ export function CustomersList() {
                     <tr>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Customer</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Contact</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Type</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Vehicles</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Total Spent</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Last Visit</th>
@@ -73,7 +76,11 @@ export function CustomersList() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {customers.map((customer: Customer) => (
-                      <tr key={customer._id} className="hover:bg-gray-50 cursor-pointer">
+                      <tr
+                        key={customer._id}
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => navigate(`/customers/${customer._id}`)}
+                      >
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
@@ -104,6 +111,20 @@ export function CustomersList() {
                               </div>
                             )}
                           </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          {customer.userId || customer.source === 'app' ? (
+                            <Badge variant="info" className="flex items-center gap-1 w-fit">
+                              <Smartphone className="h-3 w-3" />
+                              App User
+                            </Badge>
+                          ) : (
+                            <Badge variant="default">
+                              {customer.source === 'walk-in' ? 'Walk-in' :
+                               customer.source === 'referral' ? 'Referral' :
+                               customer.source === 'website' ? 'Website' : 'Manual'}
+                            </Badge>
+                          )}
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-2">

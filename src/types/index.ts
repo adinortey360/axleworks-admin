@@ -20,19 +20,23 @@ export interface AuthState {
 // Customer
 export interface Customer {
   _id: string;
+  userId?: string;
   firstName: string;
   lastName: string;
   email?: string;
   phone: string;
+  countryCode?: string;
   address?: Address;
   vehicles?: string[];
   totalSpent: number;
   visitCount: number;
   lastVisit?: string;
+  notes?: string;
   tags?: string[];
   source?: 'walk-in' | 'app' | 'referral' | 'website';
   isActive: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Address {

@@ -1,0 +1,357 @@
+import { useQuery } from '@tanstack/react-query';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Phone,
+  Mail,
+  MapPin,
+  Car,
+  Calendar,
+  DollarSign,
+  Smartphone,
+  Edit,
+  User,
+} from 'lucide-react';
+import { Header } from '../../components/layout/Header';
+import { Button } from '../../components/ui/Button';
+import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { PageLoading } from '../../components/ui/Loading';
+import { formatCurrency, formatDate, formatPhone } from '../../utils';
+import api from '../../api/client';
+import type { Customer, Vehicle } from '../../types';
+
+export function CustomerDetails() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const { data: customerData, isLoading: customerLoading } = useQuery({
+    queryKey: ['customer', id],
+    queryFn: async () => {
+      const res = await api.get(`/workshop/customers/${id}`);
+      return res.data;
+    },
+    enabled: !!id,
+  });
+
+  const { data: vehiclesData, isLoading: vehiclesLoading } = useQuery({
+    queryKey: ['customer-vehicles', id],
+    queryFn: async () => {
+      const res = await api.get(`/workshop/customers/${id}/vehicles`);
+      return res.data;
+    },
+    enabled: !!id,
+  });
+
+  const { data: statsData } = useQuery({
+    queryKey: ['customer-stats', id],
+    queryFn: async () => {
+      const res = await api.get(`/workshop/customers/${id}/stats`);
+      return res.data;
+    },
+    enabled: !!id,
+  });
+
+  const customer: Customer | undefined = customerData?.data;
+  const vehicles: Vehicle[] = vehiclesData?.data || [];
+  const stats = statsData?.data;
+
+  if (customerLoading) {
+    return <PageLoading />;
+  }
+
+  if (!customer) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="py-12 text-center">
+            <User className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Customer not found</h3>
+            <p className="text-gray-500 mb-4">
+              The customer you're looking for doesn't exist or has been removed.
+            </p>
+            <Button onClick={() => navigate('/customers')}>Back to Customers</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const isAppUser = customer.userId || customer.source === 'app';
+
+  return (
+    <>
+      <Header
+        title={`${customer.firstName} ${customer.lastName}`}
+        subtitle="Customer details"
+        actions={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              leftIcon={<ArrowLeft className="h-4 w-4" />}
+              onClick={() => navigate('/customers')}
+            >
+              Back
+            </Button>
+            <Button leftIcon={<Edit className="h-4 w-4" />}>
+              Edit Customer
+            </Button>
+          </div>
+        }
+      />
+
+      <div className="p-6 space-y-6">
+        {/* Top Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Total Spent</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {formatCurrency(stats?.totalSpent || customer.totalSpent)}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Calendar className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Total Visits</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {stats?.visitCount || customer.visitCount}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Car className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Vehicles</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {stats?.vehicleCount || vehicles.length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Calendar className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Member Since</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {formatDate(stats?.memberSince || customer.createdAt)}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Customer Information */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle>Customer Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Avatar and Name */}
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 bg-primary-100 rounded-full flex items-center justify-center">
+                  <span className="text-xl font-semibold text-primary-600">
+                    {customer.firstName.charAt(0)}{customer.lastName.charAt(0)}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {customer.firstName} {customer.lastName}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant={customer.isActive ? 'success' : 'default'}>
+                      {customer.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                    {isAppUser && (
+                      <Badge variant="info" className="flex items-center gap-1">
+                        <Smartphone className="h-3 w-3" />
+                        App User
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-gray-200" />
+
+              {/* Contact Details */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 text-gray-400" />
+                  <div>
+                    <p className="text-sm text-gray-500">Phone</p>
+                    <p className="text-gray-900">
+                      {customer.countryCode && `${customer.countryCode} `}
+                      {formatPhone(customer.phone)}
+                    </p>
+                  </div>
+                </div>
+
+                {customer.email && (
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="text-gray-900">{customer.email}</p>
+                    </div>
+                  </div>
+                )}
+
+                {customer.address && (customer.address.street || customer.address.city) && (
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-4 w-4 text-gray-400 mt-1" />
+                    <div>
+                      <p className="text-sm text-gray-500">Address</p>
+                      <p className="text-gray-900">
+                        {[
+                          customer.address.street,
+                          customer.address.city,
+                          customer.address.state,
+                          customer.address.postalCode,
+                          customer.address.country,
+                        ]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <hr className="border-gray-200" />
+
+              {/* Additional Info */}
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-gray-500">Source</p>
+                  <p className="text-gray-900 capitalize">
+                    {customer.source?.replace('-', ' ') || 'Not specified'}
+                  </p>
+                </div>
+
+                {customer.lastVisit && (
+                  <div>
+                    <p className="text-sm text-gray-500">Last Visit</p>
+                    <p className="text-gray-900">{formatDate(customer.lastVisit)}</p>
+                  </div>
+                )}
+
+                {customer.tags && customer.tags.length > 0 && (
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">Tags</p>
+                    <div className="flex flex-wrap gap-1">
+                      {customer.tags.map((tag, index) => (
+                        <Badge key={index} variant="default">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {customer.notes && (
+                  <div>
+                    <p className="text-sm text-gray-500">Notes</p>
+                    <p className="text-gray-900 text-sm">{customer.notes}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Vehicles */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Vehicles</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {vehiclesLoading ? (
+                <div className="text-center py-8 text-gray-500">Loading vehicles...</div>
+              ) : vehicles.length === 0 ? (
+                <div className="text-center py-8">
+                  <Car className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No vehicles registered</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {vehicles.map((vehicle) => (
+                    <div
+                      key={vehicle._id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/vehicles?search=${vehicle.licensePlate || vehicle.vin}`)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-white rounded-lg shadow-sm">
+                          <Car className="h-6 w-6 text-gray-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {vehicle.year} {vehicle.make} {vehicle.model}
+                          </p>
+                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                            {vehicle.licensePlate && (
+                              <span>Plate: {vehicle.licensePlate}</span>
+                            )}
+                            {vehicle.vin && <span>VIN: {vehicle.vin}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {vehicle.healthStatus && (
+                          <Badge
+                            variant={
+                              vehicle.healthStatus === 'excellent' || vehicle.healthStatus === 'good'
+                                ? 'success'
+                                : vehicle.healthStatus === 'fair'
+                                ? 'warning'
+                                : 'danger'
+                            }
+                          >
+                            {vehicle.healthStatus}
+                          </Badge>
+                        )}
+                        {vehicle.mileage && (
+                          <span className="text-sm text-gray-500">
+                            {vehicle.mileage.toLocaleString()} km
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </>
+  );
+}

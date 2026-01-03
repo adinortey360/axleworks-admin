@@ -2,8 +2,8 @@ import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
-import { AppUsersList } from './pages/users/AppUsersList';
 import { CustomersList } from './pages/customers/CustomersList';
+import { CustomerDetails } from './pages/customers/CustomerDetails';
 import { VehiclesList } from './pages/vehicles/VehiclesList';
 import { AppointmentsList } from './pages/appointments/AppointmentsList';
 import { WorkOrdersList } from './pages/workorders/WorkOrdersList';
@@ -27,8 +27,8 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
-        <Route path="app-users" element={<AppUsersList />} />
         <Route path="customers" element={<CustomersList />} />
+        <Route path="customers/:id" element={<CustomerDetails />} />
         <Route path="vehicles" element={<VehiclesList />} />
         <Route path="obd-monitor" element={<OBDLiveMonitor />} />
         <Route path="obd-history" element={<OBDHistory />} />
