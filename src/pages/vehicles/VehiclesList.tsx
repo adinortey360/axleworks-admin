@@ -6,15 +6,79 @@ import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { Modal } from '../../components/ui/Modal';
+import { Input } from '../../components/ui/Input';
 import { PageLoading } from '../../components/ui/Loading';
 import api from '../../api/client';
-import type { Vehicle } from '../../types';
+import type { Vehicle, Customer } from '../../types';
+
+interface VehicleFormData {
+  customerId: string;
+  make: string;
+  model: string;
+  year: number;
+  vin: string;
+  licensePlate: string;
+  vehicleType: string;
+  fuelType: string;
+  mileage: number;
+  color: string;
+}
+
+const initialFormData: VehicleFormData = {
+  customerId: '',
+  make: '',
+  model: '',
+  year: new Date().getFullYear(),
+  vin: '',
+  licensePlate: '',
+  vehicleType: 'sedan',
+  fuelType: 'petrol',
+  mileage: 0,
+  color: '',
+};
 
 export function VehiclesList() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState<VehicleFormData>(initialFormData);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const { data: customersData } = useQuery({
+    queryKey: ['customers-search', customerSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams({ limit: '10' });
+      if (customerSearch) params.append('search', customerSearch);
+      const res = await api.get(`/workshop/customers?${params}`);
+      return res.data;
+    },
+    enabled: isModalOpen,
+  });
+
+  const customers: Customer[] = customersData?.data || [];
+
+  const createMutation = useMutation({
+    mutationFn: async (data: VehicleFormData) => {
+      const res = await api.post('/vehicles', data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      setIsModalOpen(false);
+      setFormData(initialFormData);
+      setSelectedCustomer(null);
+      setCustomerSearch('');
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMutation.mutate({ ...formData, customerId: selectedCustomer?._id || '' });
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['vehicles', page, search],
@@ -50,7 +114,7 @@ export function VehiclesList() {
         title="Vehicles"
         subtitle="Manage customer vehicles"
         actions={
-          <Button leftIcon={<Plus className="h-4 w-4" />}>
+          <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setIsModalOpen(true)}>
             Add Vehicle
           </Button>
         }
@@ -171,6 +235,157 @@ export function VehiclesList() {
           </Card>
         )}
       </div>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Vehicle" size="lg">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Customer Selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
+            {selectedCustomer ? (
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {selectedCustomer.firstName} {selectedCustomer.lastName}
+                  </p>
+                  <p className="text-sm text-gray-500">{selectedCustomer.phone}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedCustomer(null)}
+                >
+                  Change
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search customers..."
+                    value={customerSearch}
+                    onChange={(e) => setCustomerSearch(e.target.value)}
+                    className="pl-10 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                {customers.length > 0 && (
+                  <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                    {customers.map((customer) => (
+                      <button
+                        key={customer._id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setCustomerSearch('');
+                        }}
+                        className="w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <p className="font-medium text-gray-900">
+                          {customer.firstName} {customer.lastName}
+                        </p>
+                        <p className="text-sm text-gray-500">{customer.phone}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <Input
+              label="Make"
+              value={formData.make}
+              onChange={(e) => setFormData({ ...formData, make: e.target.value })}
+              placeholder="e.g. Toyota"
+              required
+            />
+            <Input
+              label="Model"
+              value={formData.model}
+              onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+              placeholder="e.g. Camry"
+              required
+            />
+            <Input
+              label="Year"
+              type="number"
+              value={formData.year}
+              onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="License Plate"
+              value={formData.licensePlate}
+              onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
+            />
+            <Input
+              label="VIN"
+              value={formData.vin}
+              onChange={(e) => setFormData({ ...formData, vin: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Type</label>
+              <select
+                value={formData.vehicleType}
+                onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="sedan">Sedan</option>
+                <option value="suv">SUV</option>
+                <option value="pickup">Pickup</option>
+                <option value="hatchback">Hatchback</option>
+                <option value="truck">Truck</option>
+                <option value="coupe">Coupe</option>
+                <option value="van">Van</option>
+                <option value="motorcycle">Motorcycle</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Type</label>
+              <select
+                value={formData.fuelType}
+                onChange={(e) => setFormData({ ...formData, fuelType: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="petrol">Petrol</option>
+                <option value="diesel">Diesel</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="electric">Electric</option>
+              </select>
+            </div>
+            <Input
+              label="Color"
+              value={formData.color}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+            />
+          </div>
+
+          <Input
+            label="Mileage"
+            type="number"
+            value={formData.mileage}
+            onChange={(e) => setFormData({ ...formData, mileage: parseInt(e.target.value) || 0 })}
+          />
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={createMutation.isPending || !selectedCustomer}>
+              {createMutation.isPending ? 'Creating...' : 'Create Vehicle'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </>
   );
 }

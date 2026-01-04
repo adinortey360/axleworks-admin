@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -13,19 +14,67 @@ import {
   User,
   Activity,
   ClipboardList,
+  Plus,
 } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { Modal } from '../../components/ui/Modal';
+import { Input } from '../../components/ui/Input';
 import { PageLoading } from '../../components/ui/Loading';
 import { formatCurrency, formatDate, formatPhone } from '../../utils';
 import api from '../../api/client';
 import type { Customer, Vehicle } from '../../types';
 
+interface VehicleFormData {
+  make: string;
+  model: string;
+  year: number;
+  vin: string;
+  licensePlate: string;
+  vehicleType: string;
+  fuelType: string;
+  mileage: number;
+  color: string;
+}
+
+const initialFormData: VehicleFormData = {
+  make: '',
+  model: '',
+  year: new Date().getFullYear(),
+  vin: '',
+  licensePlate: '',
+  vehicleType: 'sedan',
+  fuelType: 'petrol',
+  mileage: 0,
+  color: '',
+};
+
 export function CustomerDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState<VehicleFormData>(initialFormData);
+
+  const createVehicleMutation = useMutation({
+    mutationFn: async (data: VehicleFormData) => {
+      const res = await api.post('/vehicles', { ...data, customerId: id });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-vehicles', id] });
+      queryClient.invalidateQueries({ queryKey: ['customer-stats', id] });
+      setIsModalOpen(false);
+      setFormData(initialFormData);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createVehicleMutation.mutate(formData);
+  };
 
   const { data: customerData, isLoading: customerLoading } = useQuery({
     queryKey: ['customer', id],
@@ -291,8 +340,15 @@ export function CustomerDetails() {
 
           {/* Vehicles */}
           <Card className="lg:col-span-2">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Vehicles</CardTitle>
+              <Button
+                size="sm"
+                leftIcon={<Plus className="h-4 w-4" />}
+                onClick={() => setIsModalOpen(true)}
+              >
+                Add Vehicle
+              </Button>
             </CardHeader>
             <CardContent>
               {vehiclesLoading ? (
@@ -371,6 +427,109 @@ export function CustomerDetails() {
           </Card>
         </div>
       </div>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Vehicle" size="lg">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Customer Info (pre-selected) */}
+          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-sm text-gray-500">Customer</p>
+            <p className="font-medium text-gray-900">
+              {customer?.firstName} {customer?.lastName}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <Input
+              label="Make"
+              value={formData.make}
+              onChange={(e) => setFormData({ ...formData, make: e.target.value })}
+              placeholder="e.g. Toyota"
+              required
+            />
+            <Input
+              label="Model"
+              value={formData.model}
+              onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+              placeholder="e.g. Camry"
+              required
+            />
+            <Input
+              label="Year"
+              type="number"
+              value={formData.year}
+              onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="License Plate"
+              value={formData.licensePlate}
+              onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
+            />
+            <Input
+              label="VIN"
+              value={formData.vin}
+              onChange={(e) => setFormData({ ...formData, vin: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Type</label>
+              <select
+                value={formData.vehicleType}
+                onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="sedan">Sedan</option>
+                <option value="suv">SUV</option>
+                <option value="pickup">Pickup</option>
+                <option value="hatchback">Hatchback</option>
+                <option value="truck">Truck</option>
+                <option value="coupe">Coupe</option>
+                <option value="van">Van</option>
+                <option value="motorcycle">Motorcycle</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Type</label>
+              <select
+                value={formData.fuelType}
+                onChange={(e) => setFormData({ ...formData, fuelType: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="petrol">Petrol</option>
+                <option value="diesel">Diesel</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="electric">Electric</option>
+              </select>
+            </div>
+            <Input
+              label="Color"
+              value={formData.color}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+            />
+          </div>
+
+          <Input
+            label="Mileage"
+            type="number"
+            value={formData.mileage}
+            onChange={(e) => setFormData({ ...formData, mileage: parseInt(e.target.value) || 0 })}
+          />
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={createVehicleMutation.isPending}>
+              {createVehicleMutation.isPending ? 'Creating...' : 'Create Vehicle'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </>
   );
 }
