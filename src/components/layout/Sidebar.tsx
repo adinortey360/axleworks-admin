@@ -18,6 +18,7 @@ import {
   LogOut,
   Wrench,
   Stethoscope,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -26,6 +27,7 @@ const navigation = [
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Vehicles', href: '/vehicles', icon: Car },
   { name: 'Consultations', href: '/consultations', icon: Stethoscope },
+  { name: 'Diagnostic Reports', href: '/diagnostic-reports', icon: ClipboardCheck },
   { name: 'Appointments', href: '/appointments', icon: Calendar },
   { name: 'Work Orders', href: '/workorders', icon: ClipboardList },
   { name: 'Estimates', href: '/estimates', icon: FileText },

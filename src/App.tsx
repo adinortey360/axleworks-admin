@@ -16,6 +16,8 @@ import { SuppliersList } from './pages/suppliers/SuppliersList';
 import { EmployeesList } from './pages/employees/EmployeesList';
 import { ExpensesList } from './pages/expenses/ExpensesList';
 import { Reports } from './pages/reports/Reports';
+import { DiagnosticReportsList } from './pages/reports/DiagnosticReportsList';
+import { DiagnosticReportDetails } from './pages/reports/DiagnosticReportDetails';
 import { ServiceRecordForm } from './pages/service-records/ServiceRecordForm';
 import { ServiceEntriesList } from './pages/service-entries/ServiceEntriesList';
 import { ServiceEntryForm } from './pages/service-entries/ServiceEntryForm';
@@ -36,6 +38,8 @@ function App() {
         <Route path="obd-monitor" element={<OBDLiveMonitor />} />
         <Route path="obd-history" element={<OBDHistory />} />
         <Route path="consultations" element={<ConsultationsList />} />
+        <Route path="diagnostic-reports" element={<DiagnosticReportsList />} />
+        <Route path="diagnostic-reports/:id" element={<DiagnosticReportDetails />} />
         <Route path="service-records/new" element={<ServiceRecordForm />} />
         <Route path="service-entries" element={<ServiceEntriesList />} />
         <Route path="service-entries/new" element={<ServiceEntryForm />} />
