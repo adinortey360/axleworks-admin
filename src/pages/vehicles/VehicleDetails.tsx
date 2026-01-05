@@ -22,6 +22,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { PageLoading } from '../../components/ui/Loading';
+import { ConsultationIntakeForm, ConsultationIntakeData } from '../../components/consultation/ConsultationIntakeForm';
 import { formatDate } from '../../utils';
 import api from '../../api/client';
 import type { Vehicle, Customer } from '../../types';
@@ -43,23 +44,18 @@ export function VehicleDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
-  const [chiefComplaint, setChiefComplaint] = useState('');
-  const [symptoms, setSymptoms] = useState('');
 
   const createConsultationMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (intakeData: ConsultationIntakeData) => {
       const res = await api.post('/consultations', {
         vehicleId: id,
-        chiefComplaint,
-        symptoms: symptoms.split('\n').filter(s => s.trim()),
+        ...intakeData,
       });
       return res.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       setIsConsultationModalOpen(false);
-      setChiefComplaint('');
-      setSymptoms('');
-      alert(`Consultation created! ID: ${data.data._id}`);
+      navigate('/consultations');
     },
   });
 
@@ -468,70 +464,26 @@ export function VehicleDetails() {
         isOpen={isConsultationModalOpen}
         onClose={() => setIsConsultationModalOpen(false)}
         title="Start New Consultation"
-        size="lg"
+        size="xl"
       >
-        <div className="space-y-4">
-          <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-500">Vehicle</p>
-            <p className="font-medium text-gray-900">
-              {vehicle?.year} {vehicle?.make} {vehicle?.model}
-            </p>
-            {vehicle?.licensePlate && (
-              <p className="text-sm text-gray-500">Plate: {vehicle.licensePlate}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Chief Complaint
-            </label>
-            <input
-              type="text"
-              value={chiefComplaint}
-              onChange={(e) => setChiefComplaint(e.target.value)}
-              placeholder="e.g., Engine making noise, Check engine light on..."
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Symptoms (one per line)
-            </label>
-            <textarea
-              value={symptoms}
-              onChange={(e) => setSymptoms(e.target.value)}
-              placeholder="Knocking sound when accelerating&#10;Loss of power&#10;Rough idle"
-              rows={4}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> A consultation will capture a snapshot of the vehicle's
-              current data including service history and latest OBD readings. The desktop
-              diagnostic app can then pick up this consultation.
-            </p>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsConsultationModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => createConsultationMutation.mutate()}
-              disabled={createConsultationMutation.isPending}
-              leftIcon={<Stethoscope className="h-4 w-4" />}
-            >
-              {createConsultationMutation.isPending ? 'Creating...' : 'Create Consultation'}
-            </Button>
-          </div>
-        </div>
+        {vehicle && vehicle.customer && (
+          <ConsultationIntakeForm
+            vehicleInfo={{
+              year: vehicle.year,
+              make: vehicle.make,
+              model: vehicle.model,
+              licensePlate: vehicle.licensePlate,
+            }}
+            customerInfo={{
+              firstName: vehicle.customer.firstName,
+              lastName: vehicle.customer.lastName,
+              phone: vehicle.customer.phone,
+            }}
+            onSubmit={(data) => createConsultationMutation.mutate(data)}
+            onCancel={() => setIsConsultationModalOpen(false)}
+            isSubmitting={createConsultationMutation.isPending}
+          />
+        )}
       </Modal>
     </>
   );
