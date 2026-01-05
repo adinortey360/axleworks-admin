@@ -15,6 +15,11 @@ import {
   Phone,
   Hash,
   Stethoscope,
+  FileText,
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  ChevronRight,
 } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
@@ -38,6 +43,28 @@ interface ServiceEntry {
   mileageAtService?: number;
   notes?: string;
   cost?: number;
+}
+
+interface DiagnosticReport {
+  _id: string;
+  reportId: string;
+  generatedAt: string;
+  consultationId?: string;
+  summary: {
+    totalIssues: number;
+    criticalCount: number;
+    warningCount: number;
+    infoCount: number;
+    dtcCount: number;
+    testsPerformed: number;
+    testsPassed: number;
+  };
+  customerReport?: {
+    vehicleHealth?: {
+      overallStatus: 'good' | 'fair' | 'needs_attention' | 'critical';
+      overallScore: number;
+    };
+  };
 }
 
 export function VehicleDetails() {
@@ -97,10 +124,20 @@ export function VehicleDetails() {
     enabled: !!id,
   });
 
+  const { data: diagnosticReportsData } = useQuery({
+    queryKey: ['vehicle-diagnostic-reports', id],
+    queryFn: async () => {
+      const res = await api.get(`/vehicles/${id}/diagnostic-reports?limit=5`);
+      return res.data;
+    },
+    enabled: !!id,
+  });
+
   const vehicle: VehicleWithCustomer | null = vehicleData;
   const serviceEntries: ServiceEntry[] = serviceEntriesData?.data || [];
   const obdStats = obdStatsData?.stats;
   const obdSessions = obdSessionsData?.data || [];
+  const diagnosticReports: DiagnosticReport[] = diagnosticReportsData?.data || [];
 
   if (vehicleLoading) {
     return <PageLoading />;
@@ -453,6 +490,95 @@ export function VehicleDetails() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Diagnostic Reports */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Diagnostic Reports</CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<FileText className="h-4 w-4" />}
+              onClick={() => navigate(`/diagnostic-reports?vehicleId=${id}`)}
+            >
+              View All
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {diagnosticReports.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No diagnostic reports yet</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Reports will appear here when synced from the diagnostic tool
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {diagnosticReports.map((report) => (
+                  <div
+                    key={report._id}
+                    className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/diagnostic-reports/${report._id}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${
+                          report.summary?.criticalCount > 0 ? 'bg-red-100' :
+                          report.summary?.warningCount > 0 ? 'bg-yellow-100' : 'bg-green-100'
+                        }`}>
+                          {report.summary?.criticalCount > 0 ? (
+                            <AlertCircle className="h-5 w-5 text-red-600" />
+                          ) : report.summary?.warningCount > 0 ? (
+                            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                          ) : (
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {formatDate(report.generatedAt)}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {report.summary?.criticalCount > 0 && (
+                              <span className="text-xs text-red-600">
+                                {report.summary.criticalCount} critical
+                              </span>
+                            )}
+                            {report.summary?.warningCount > 0 && (
+                              <span className="text-xs text-yellow-600">
+                                {report.summary.warningCount} warnings
+                              </span>
+                            )}
+                            {report.summary?.dtcCount > 0 && (
+                              <span className="text-xs text-gray-600">
+                                {report.summary.dtcCount} DTCs
+                              </span>
+                            )}
+                            {report.summary?.totalIssues === 0 && report.summary?.dtcCount === 0 && (
+                              <span className="text-xs text-green-600">No issues</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {report.customerReport?.vehicleHealth && (
+                          <Badge variant={
+                            report.customerReport.vehicleHealth.overallStatus === 'good' ? 'success' :
+                            report.customerReport.vehicleHealth.overallStatus === 'fair' ? 'warning' : 'danger'
+                          }>
+                            {report.customerReport.vehicleHealth.overallScore}%
+                          </Badge>
+                        )}
+                        <ChevronRight className="h-5 w-5 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
