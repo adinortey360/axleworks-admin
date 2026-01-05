@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { CustomersList } from './pages/customers/CustomersList';
 import { CustomerDetails } from './pages/customers/CustomerDetails';
 import { VehiclesList } from './pages/vehicles/VehiclesList';
+import { VehicleDetails } from './pages/vehicles/VehicleDetails';
 import { AppointmentsList } from './pages/appointments/AppointmentsList';
 import { WorkOrdersList } from './pages/workorders/WorkOrdersList';
 import { EstimatesList } from './pages/estimates/EstimatesList';
@@ -30,6 +31,7 @@ function App() {
         <Route path="customers" element={<CustomersList />} />
         <Route path="customers/:id" element={<CustomerDetails />} />
         <Route path="vehicles" element={<VehiclesList />} />
+        <Route path="vehicles/:id" element={<VehicleDetails />} />
         <Route path="obd-monitor" element={<OBDLiveMonitor />} />
         <Route path="obd-history" element={<OBDHistory />} />
         <Route path="service-records/new" element={<ServiceRecordForm />} />

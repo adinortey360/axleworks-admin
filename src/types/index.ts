@@ -58,6 +58,7 @@ export interface Vehicle {
   licensePlate?: string;
   vehicleType?: 'sedan' | 'suv' | 'pickup' | 'hatchback' | 'truck' | 'coupe' | 'van' | 'motorcycle';
   fuelType?: 'petrol' | 'diesel' | 'hybrid' | 'electric';
+  transmission?: 'automatic' | 'manual' | 'cvt';
   mileage?: number;
   healthStatus?: 'excellent' | 'good' | 'fair' | 'poor' | 'critical';
   color?: string;

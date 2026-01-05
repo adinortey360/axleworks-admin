@@ -153,7 +153,7 @@ export function VehiclesList() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {vehicles.map((vehicle: Vehicle) => (
-                      <tr key={vehicle._id} className="hover:bg-gray-50 cursor-pointer">
+                      <tr key={vehicle._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/vehicles/${vehicle._id}`)}>
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
                             <div className="p-2 bg-gray-100 rounded-lg">
