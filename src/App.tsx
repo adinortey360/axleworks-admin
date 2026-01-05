@@ -21,6 +21,7 @@ import { ServiceEntriesList } from './pages/service-entries/ServiceEntriesList';
 import { ServiceEntryForm } from './pages/service-entries/ServiceEntryForm';
 import { OBDLiveMonitor } from './pages/obd/OBDLiveMonitor';
 import { OBDHistory } from './pages/obd/OBDHistory';
+import { ConsultationsList } from './pages/consultations/ConsultationsList';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
         <Route path="vehicles/:id" element={<VehicleDetails />} />
         <Route path="obd-monitor" element={<OBDLiveMonitor />} />
         <Route path="obd-history" element={<OBDHistory />} />
+        <Route path="consultations" element={<ConsultationsList />} />
         <Route path="service-records/new" element={<ServiceRecordForm />} />
         <Route path="service-entries" element={<ServiceEntriesList />} />
         <Route path="service-entries/new" element={<ServiceEntryForm />} />
