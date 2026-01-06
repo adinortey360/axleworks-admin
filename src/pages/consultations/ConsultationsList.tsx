@@ -178,7 +178,7 @@ export function ConsultationsList() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {consultations.map((consultation) => {
+                    {consultations.filter((c) => c.vehicleId && c.customerId).map((consultation) => {
                       const config = statusConfig[consultation.status];
                       return (
                         <tr
@@ -193,9 +193,9 @@ export function ConsultationsList() {
                               </div>
                               <div>
                                 <p className="font-medium text-gray-900">
-                                  {consultation.vehicleId.year} {consultation.vehicleId.make} {consultation.vehicleId.model}
+                                  {consultation.vehicleId?.year} {consultation.vehicleId?.make} {consultation.vehicleId?.model}
                                 </p>
-                                {consultation.vehicleId.licensePlate && (
+                                {consultation.vehicleId?.licensePlate && (
                                   <p className="text-sm text-gray-500 font-mono">
                                     {consultation.vehicleId.licensePlate}
                                   </p>
@@ -205,9 +205,9 @@ export function ConsultationsList() {
                           </td>
                           <td className="py-4 px-4">
                             <p className="font-medium text-gray-900">
-                              {consultation.customerId.firstName} {consultation.customerId.lastName}
+                              {consultation.customerId?.firstName} {consultation.customerId?.lastName}
                             </p>
-                            <p className="text-sm text-gray-500">{consultation.customerId.phone}</p>
+                            <p className="text-sm text-gray-500">{consultation.customerId?.phone}</p>
                           </td>
                           <td className="py-4 px-4">
                             <p className="text-gray-900 truncate max-w-[200px]">
@@ -228,16 +228,18 @@ export function ConsultationsList() {
                           </td>
                           <td className="py-4 px-4 text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/vehicles/${consultation.vehicleId._id}`);
-                                }}
-                                className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                                title="View Vehicle"
-                              >
-                                <Car className="h-4 w-4" />
-                              </button>
+                              {consultation.vehicleId && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/vehicles/${consultation.vehicleId._id}`);
+                                  }}
+                                  className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                                  title="View Vehicle"
+                                >
+                                  <Car className="h-4 w-4" />
+                                </button>
+                              )}
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -311,10 +313,10 @@ export function ConsultationsList() {
                 <Car className="h-5 w-5 text-gray-600" />
                 <div>
                   <p className="font-medium text-gray-900">
-                    {selectedConsultation.vehicleId.year} {selectedConsultation.vehicleId.make}{' '}
-                    {selectedConsultation.vehicleId.model}
+                    {selectedConsultation.vehicleId?.year} {selectedConsultation.vehicleId?.make}{' '}
+                    {selectedConsultation.vehicleId?.model}
                   </p>
-                  {selectedConsultation.vehicleId.licensePlate && (
+                  {selectedConsultation.vehicleId?.licensePlate && (
                     <p className="text-sm text-gray-500">
                       Plate: {selectedConsultation.vehicleId.licensePlate}
                     </p>
@@ -329,9 +331,9 @@ export function ConsultationsList() {
                 <User className="h-5 w-5 text-gray-600" />
                 <div>
                   <p className="font-medium text-gray-900">
-                    {selectedConsultation.customerId.firstName} {selectedConsultation.customerId.lastName}
+                    {selectedConsultation.customerId?.firstName} {selectedConsultation.customerId?.lastName}
                   </p>
-                  <p className="text-sm text-gray-500">{selectedConsultation.customerId.phone}</p>
+                  <p className="text-sm text-gray-500">{selectedConsultation.customerId?.phone}</p>
                 </div>
               </div>
             </div>
@@ -398,12 +400,14 @@ export function ConsultationsList() {
               <Button variant="outline" onClick={() => setIsDetailModalOpen(false)}>
                 Close
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate(`/vehicles/${selectedConsultation.vehicleId._id}`)}
-              >
-                View Vehicle
-              </Button>
+              {selectedConsultation.vehicleId && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/vehicles/${selectedConsultation.vehicleId._id}`)}
+                >
+                  View Vehicle
+                </Button>
+              )}
               {(selectedConsultation.status === 'pending' || selectedConsultation.status === 'locked') && (
                 <Button
                   variant="danger"
