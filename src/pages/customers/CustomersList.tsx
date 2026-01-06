@@ -134,15 +134,15 @@ export function CustomersList() {
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
                               <span className="text-sm font-medium text-primary-600">
-                                {customer.firstName.charAt(0)}{customer.lastName.charAt(0)}
+                                {(customer.firstName || '?').charAt(0)}{(customer.lastName || '?').charAt(0)}
                               </span>
                             </div>
                             <div>
                               <p className="font-medium text-gray-900">
-                                {customer.firstName} {customer.lastName}
+                                {customer.firstName || ''} {customer.lastName || ''}
                               </p>
                               <p className="text-sm text-gray-500">
-                                {customer.visitCount} visits
+                                {customer.visitCount || 0} visits
                               </p>
                             </div>
                           </div>
