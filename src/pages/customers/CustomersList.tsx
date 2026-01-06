@@ -39,16 +39,34 @@ export function CustomersList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<CustomerFormData>(initialFormData);
 
+  // Query must be defined before mutation that uses refetch
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['customers', page, search],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), limit: '10' });
+      if (search) params.append('search', search);
+      const res = await api.get(`/workshop/customers?${params}`);
+      return res.data;
+    },
+    staleTime: 0, // Always consider data stale
+  });
+
+  const customers = data?.data || [];
+  const pagination = data?.pagination;
+
   const createMutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
       const res = await api.post('/workshop/customers', data);
       return res.data;
     },
-    onSuccess: async () => {
-      // Force refetch the customers list
-      await queryClient.refetchQueries({ queryKey: ['customers'] });
+    onSuccess: () => {
       setIsModalOpen(false);
       setFormData(initialFormData);
+      // Reset to page 1 to see new customer at top
+      setPage(1);
+      setSearch('');
+      // Force refetch after state updates
+      setTimeout(() => refetch(), 100);
     },
     onError: (error: Error & { response?: { data?: { message?: string } } }) => {
       alert(error.response?.data?.message || error.message || 'Failed to create customer');
@@ -59,19 +77,6 @@ export function CustomersList() {
     e.preventDefault();
     createMutation.mutate(formData);
   };
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['customers', page, search],
-    queryFn: async () => {
-      const params = new URLSearchParams({ page: String(page), limit: '10' });
-      if (search) params.append('search', search);
-      const res = await api.get(`/workshop/customers?${params}`);
-      return res.data;
-    },
-  });
-
-  const customers = data?.data || [];
-  const pagination = data?.pagination;
 
   return (
     <>
