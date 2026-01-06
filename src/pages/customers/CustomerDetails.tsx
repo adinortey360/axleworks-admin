@@ -382,7 +382,7 @@ export function CustomerDetails() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {vehicles.map((vehicle) => (
+                  {vehicles.filter(Boolean).map((vehicle) => (
                     <div
                       key={vehicle._id}
                       className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
