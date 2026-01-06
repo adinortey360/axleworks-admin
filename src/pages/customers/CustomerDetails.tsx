@@ -16,6 +16,7 @@ import {
   ClipboardList,
   Plus,
   Trash2,
+  MessageSquare,
 } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
@@ -438,6 +439,13 @@ export function CustomerDetails() {
                         >
                           <ClipboardList className="h-4 w-4" />
                           Service History
+                        </button>
+                        <button
+                          onClick={() => navigate(`/consultations/new?customerId=${id}&vehicleId=${vehicle._id}`)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-100 hover:bg-purple-200 rounded-lg transition-colors"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          Consultation
                         </button>
                         <button
                           onClick={() => handleDeleteVehicle(vehicle)}
