@@ -44,10 +44,14 @@ export function CustomersList() {
       const res = await api.post('/workshop/customers', data);
       return res.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    onSuccess: async () => {
+      // Force refetch the customers list
+      await queryClient.refetchQueries({ queryKey: ['customers'] });
       setIsModalOpen(false);
       setFormData(initialFormData);
+    },
+    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
+      alert(error.response?.data?.message || error.message || 'Failed to create customer');
     },
   });
 
