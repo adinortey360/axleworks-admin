@@ -696,7 +696,7 @@ export function OBDLiveMonitor() {
               >
                 All Vehicles
               </button>
-              {vehicles.map((vehicle: any) => {
+              {vehicles.filter(Boolean).map((vehicle: any) => {
                 const stream = vehicleStreams.get(vehicle._id);
                 return (
                   <button
