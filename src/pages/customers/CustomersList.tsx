@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Phone, Mail, Car, Smartphone } from 'lucide-react';
+import { Plus, Search, Phone, Mail, Car, Smartphone, Trash2 } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
@@ -72,9 +72,29 @@ export function CustomersList() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/workshop/customers/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      refetch();
+    },
+    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
+      alert(error.response?.data?.message || error.message || 'Failed to delete customer');
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createMutation.mutate(formData);
+  };
+
+  const handleDelete = (e: React.MouseEvent, customer: Customer) => {
+    e.stopPropagation(); // Prevent row click navigation
+    if (confirm(`Are you sure you want to delete ${customer.firstName} ${customer.lastName}? This will also delete their vehicles.`)) {
+      deleteMutation.mutate(customer._id);
+    }
   };
 
   return (
@@ -120,6 +140,7 @@ export function CustomersList() {
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Total Spent</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Last Visit</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -192,6 +213,15 @@ export function CustomersList() {
                           <Badge variant={customer.isActive ? 'success' : 'default'}>
                             {customer.isActive ? 'Active' : 'Inactive'}
                           </Badge>
+                        </td>
+                        <td className="py-4 px-4">
+                          <button
+                            onClick={(e) => handleDelete(e, customer)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete customer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </td>
                       </tr>
                     ))}
