@@ -15,6 +15,7 @@ import {
   Activity,
   ClipboardList,
   Plus,
+  Trash2,
 } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
@@ -71,9 +72,29 @@ export function CustomerDetails() {
     },
   });
 
+  const deleteVehicleMutation = useMutation({
+    mutationFn: async (vehicleId: string) => {
+      const res = await api.delete(`/vehicles/${vehicleId}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-vehicles', id] });
+      queryClient.invalidateQueries({ queryKey: ['customer-stats', id] });
+    },
+    onError: (error: Error & { response?: { data?: { message?: string } } }) => {
+      alert(error.response?.data?.message || error.message || 'Failed to delete vehicle');
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createVehicleMutation.mutate(formData);
+  };
+
+  const handleDeleteVehicle = (vehicle: Vehicle) => {
+    if (confirm(`Are you sure you want to delete ${vehicle.year} ${vehicle.make} ${vehicle.model}?`)) {
+      deleteVehicleMutation.mutate(vehicle._id);
+    }
   };
 
   const { data: customerData, isLoading: customerLoading } = useQuery({
@@ -417,6 +438,14 @@ export function CustomerDetails() {
                         >
                           <ClipboardList className="h-4 w-4" />
                           Service History
+                        </button>
+                        <button
+                          onClick={() => handleDeleteVehicle(vehicle)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors ml-auto"
+                          title="Delete vehicle"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
                         </button>
                       </div>
                     </div>
