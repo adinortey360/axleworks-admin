@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Phone, Mail, Car, Smartphone, Trash2 } from 'lucide-react';
+import { Plus, Search, Phone, Mail, Car, Smartphone, Trash2, KeyRound } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
@@ -52,6 +52,25 @@ export function CustomersList() {
 
   const customers = data?.data || [];
   const pagination = data?.pagination;
+
+  // Live OTP codes for manual fallback when SMS delivery fails.
+  // Refreshed often since codes expire after 5 minutes.
+  interface ActiveOtp {
+    phone: string;
+    countryCode: string;
+    otp: string;
+    expiresInSeconds: number;
+  }
+  const { data: otpData } = useQuery({
+    queryKey: ['active-otps'],
+    queryFn: async () => {
+      const res = await api.get('/otps/active');
+      return res.data as { success: boolean; data: ActiveOtp[] };
+    },
+    refetchInterval: 10000,
+    retry: false,
+  });
+  const activeOtps = otpData?.data ?? [];
 
   const createMutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
@@ -123,6 +142,41 @@ export function CustomersList() {
             />
           </div>
         </div>
+
+        {/* Live OTP codes - manual fallback when SMS delivery fails */}
+        <Card className="mb-6">
+          <CardContent>
+            <div className="flex items-center gap-2 mb-3">
+              <KeyRound className="h-4 w-4 text-amber-600" />
+              <h3 className="text-sm font-semibold text-gray-900">Live OTP codes</h3>
+              <span className="text-xs text-gray-500">
+                Read the code out if the customer did not receive the SMS (auto-refreshes)
+              </span>
+            </div>
+            {activeOtps.length === 0 ? (
+              <p className="text-sm text-gray-500">No active codes right now.</p>
+            ) : (
+              <div className="flex flex-wrap gap-3">
+                {activeOtps.map((entry) => (
+                  <div
+                    key={`${entry.countryCode}${entry.phone}`}
+                    className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2"
+                  >
+                    <span className="text-sm text-gray-700">
+                      {entry.countryCode} {entry.phone}
+                    </span>
+                    <span className="text-lg font-bold tracking-widest text-gray-900">
+                      {entry.otp}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      expires in {entry.expiresInSeconds}s
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {isLoading ? (
           <PageLoading />
