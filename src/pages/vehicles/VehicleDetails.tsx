@@ -232,11 +232,13 @@ export function VehicleDetails() {
   const obdSessions = obdSessionsData?.data || [];
   const diagnosticReports: DiagnosticReport[] = diagnosticReportsData?.data || [];
 
-  // Latest full service record - this is what the app reads for fluids.
+  // Recent full service records - newest first. Fluids are merged per-fluid
+  // below (latest known value each), mirroring what the app shows, so one
+  // quick service never hides the fluids from an earlier one.
   const { data: fullRecordsData } = useQuery({
     queryKey: ['vehicle-service-records', id],
     queryFn: async () => {
-      const res = await api.get(`/service-records?vehicleId=${id}&limit=1`);
+      const res = await api.get(`/service-records?vehicleId=${id}&limit=25`);
       return (res.data.data || []) as any[];
     },
     enabled: !!id,
@@ -245,6 +247,30 @@ export function VehicleDetails() {
     () => (fullRecordsData && fullRecordsData.length > 0 ? fullRecordsData[0] : null),
     [fullRecordsData]
   );
+  const mergedFluids: Record<string, any> | null = useMemo(() => {
+    const list: any[] = fullRecordsData || [];
+    if (list.length === 0) return null;
+    const hasData = (f: any): boolean =>
+      !!f && (f.changed === true ||
+        (typeof f.level === 'string' && f.level !== 'not_checked') ||
+        (typeof f.condition === 'string' && f.condition !== 'not_checked'));
+    const pick = (key: string): any => {
+      const found = list.find((r: any) => hasData(r?.[key]));
+      return (found ? found[key] : list[0][key]) ?? null;
+    };
+    return {
+      oil: pick('oil'),
+      brakeFluid: pick('brakeFluid'),
+      transmissionFluid: pick('transmissionFluid'),
+      coolant: pick('coolant'),
+      powerSteeringFluid: pick('powerSteeringFluid'),
+    };
+  }, [fullRecordsData]);
+  const mergedNextChange: number | undefined = useMemo(() => {
+    const list: any[] = fullRecordsData || [];
+    const withNext = list.find((r: any) => typeof r?.oil?.nextChangeMileage === 'number');
+    return withNext ? withNext.oil.nextChangeMileage : undefined;
+  }, [fullRecordsData]);
 
   const logMutation = useMutation({
     mutationFn: async (preset: QuickService) => {
@@ -696,22 +722,25 @@ export function VehicleDetails() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!latestRecord ? (
+              {!latestRecord || !mergedFluids ? (
                 <p className="text-sm text-gray-500">
                   No service records yet. Log one on the left and it becomes the app's fluid baseline.
                 </p>
               ) : (
                 <div>
-                  <FluidRow label="Engine oil" value={latestRecord.oil?.condition !== 'not_checked' ? latestRecord.oil?.condition : latestRecord.oil?.level} changed={latestRecord.oil?.changed} />
-                  <FluidRow label="Brake fluid" value={latestRecord.brakeFluid?.condition !== 'not_checked' ? latestRecord.brakeFluid?.condition : latestRecord.brakeFluid?.level} changed={latestRecord.brakeFluid?.changed} />
-                  <FluidRow label="Transmission fluid" value={latestRecord.transmissionFluid?.condition !== 'not_checked' ? latestRecord.transmissionFluid?.condition : latestRecord.transmissionFluid?.level} changed={latestRecord.transmissionFluid?.changed} />
-                  <FluidRow label="Coolant" value={latestRecord.coolant?.condition !== 'not_checked' ? latestRecord.coolant?.condition : latestRecord.coolant?.level} changed={latestRecord.coolant?.changed} />
-                  <FluidRow label="Power steering" value={latestRecord.powerSteeringFluid?.level} changed={latestRecord.powerSteeringFluid?.changed} />
-                  {latestRecord.oil?.nextChangeMileage ? (
+                  <FluidRow label="Engine oil" value={mergedFluids.oil?.condition !== 'not_checked' ? mergedFluids.oil?.condition : mergedFluids.oil?.level} changed={mergedFluids.oil?.changed} />
+                  <FluidRow label="Brake fluid" value={mergedFluids.brakeFluid?.condition !== 'not_checked' ? mergedFluids.brakeFluid?.condition : mergedFluids.brakeFluid?.level} changed={mergedFluids.brakeFluid?.changed} />
+                  <FluidRow label="Transmission fluid" value={mergedFluids.transmissionFluid?.condition !== 'not_checked' ? mergedFluids.transmissionFluid?.condition : mergedFluids.transmissionFluid?.level} changed={mergedFluids.transmissionFluid?.changed} />
+                  <FluidRow label="Coolant" value={mergedFluids.coolant?.condition !== 'not_checked' ? mergedFluids.coolant?.condition : mergedFluids.coolant?.level} changed={mergedFluids.coolant?.changed} />
+                  <FluidRow label="Power steering" value={mergedFluids.powerSteeringFluid?.level} changed={mergedFluids.powerSteeringFluid?.changed} />
+                  {mergedNextChange ? (
                     <p className="text-xs text-gray-500 mt-2">
-                      Next oil change at {Number(latestRecord.oil.nextChangeMileage).toLocaleString()} mi.
+                      Next oil change at {Number(mergedNextChange).toLocaleString()} mi.
                     </p>
                   ) : null}
+                  <p className="text-xs text-gray-400 mt-1">
+                    Latest known value per fluid across recent records.
+                  </p>
                   <button
                     onClick={() => {
                       if (window.confirm('Delete this service record? The app will fall back to the previous one.')) {
