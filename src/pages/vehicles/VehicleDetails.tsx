@@ -69,11 +69,19 @@ interface DiagnosticReport {
   };
 }
 
+type EntryServiceType =
+  | 'oil_change' | 'brake_service' | 'tire_service' | 'battery_service'
+  | 'fluid_service' | 'filter_service' | 'wiper_service' | 'light_check'
+  | 'general_inspection';
+
 interface QuickService {
   key: string;
   label: string;
   servicesPerformed: string[];
+  /** Full-record fluids patch (changed fluids read as full). */
   patch: Record<string, unknown>;
+  /** Lightweight history entry type (service-entries log). */
+  entryType: EntryServiceType;
 }
 
 const QUICK_SERVICES: QuickService[] = [
@@ -81,37 +89,43 @@ const QUICK_SERVICES: QuickService[] = [
     key: 'oil-change',
     label: 'Oil change',
     servicesPerformed: ['Oil change'],
-    patch: { oil: { level: 'good', condition: 'clean', changed: true } },
+    patch: { oil: { level: 'full', condition: 'clean', changed: true } },
+    entryType: 'oil_change',
   },
   {
     key: 'tire-rotation',
     label: 'Tire rotation',
     servicesPerformed: ['Tire rotation'],
     patch: {},
+    entryType: 'tire_service',
   },
   {
     key: 'brake-service',
     label: 'Brake service',
     servicesPerformed: ['Brake service'],
-    patch: { brakeFluid: { level: 'good', condition: 'good', changed: true } },
+    patch: { brakeFluid: { level: 'full', condition: 'good', changed: true } },
+    entryType: 'brake_service',
   },
   {
     key: 'coolant-flush',
     label: 'Coolant flush',
     servicesPerformed: ['Coolant flush'],
-    patch: { coolant: { level: 'good', condition: 'good', changed: true } },
+    patch: { coolant: { level: 'full', condition: 'good', changed: true } },
+    entryType: 'fluid_service',
   },
   {
     key: 'transmission-service',
     label: 'Transmission service',
     servicesPerformed: ['Transmission service'],
-    patch: { transmissionFluid: { level: 'good', condition: 'good', changed: true } },
+    patch: { transmissionFluid: { level: 'full', condition: 'good', changed: true } },
+    entryType: 'fluid_service',
   },
   {
     key: 'inspection',
     label: 'Inspection',
     servicesPerformed: ['Inspection'],
     patch: {},
+    entryType: 'general_inspection',
   },
 ];
 
@@ -261,14 +275,26 @@ export function VehicleDetails() {
       if (preset.key === 'oil-change' && mileageAtService) {
         (body as any).oil = { ...(defaultFluids.oil as object), ...(preset.patch.oil as object || {}), nextChangeMileage: mileageAtService + 5000 };
       }
-      const res = await api.post('/service-records', body);
-      return res.data;
+      // Full record (feeds the app's fluids) + lightweight history entry
+      // (feeds the Service History list) so both stay in sync.
+      const [recordRes] = await Promise.all([
+        api.post('/service-records', body),
+        api.post('/service-entries', {
+          vehicleId: id,
+          serviceType: preset.entryType,
+          serviceDate,
+          mileageAtService,
+          notes: `Quick ${preset.label.toLowerCase()} logged from the vehicle page.`,
+        }),
+      ]);
+      return { record: recordRes.data, preset };
     },
     onSuccess: (_data, preset) => {
       queryClient.invalidateQueries({ queryKey: ['vehicle-service-records', id] });
+      queryClient.invalidateQueries({ queryKey: ['vehicle-service-entries', id] });
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
       setPendingKey(null);
-      setFeedback({ kind: 'ok', text: `${preset.label} logged. The app picks it up as the latest service data.` });
+      setFeedback({ kind: 'ok', text: `${preset.label} logged in history and fluids. The app picks it up as the latest service data.` });
     },
     onError: (err: any) => {
       setPendingKey(null);
@@ -643,9 +669,9 @@ export function VehicleDetails() {
                 ))}
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-500">
-                  Quick services post a full service record (oil next-change +5,000 mi). The app reads the latest record for fluids.
-                </p>
+                    <p className="text-xs text-gray-500">
+                      Quick services post a full service record (oil next-change +5,000 mi) plus a history entry, so history and fluids stay in sync. The app reads the latest record for fluids.
+                    </p>
                 <Button
                   variant="ghost"
                   size="sm"
