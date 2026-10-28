@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -10,6 +10,7 @@ import {
   Fuel,
   Activity,
   ClipboardList,
+  Droplets,
   Wrench,
   Settings,
   Phone,
@@ -20,6 +21,7 @@ import {
   AlertTriangle,
   CheckCircle,
   ChevronRight,
+  Trash2,
 } from 'lucide-react';
 import { Header } from '../../components/layout/Header';
 import { Button } from '../../components/ui/Button';
@@ -67,10 +69,87 @@ interface DiagnosticReport {
   };
 }
 
+interface QuickService {
+  key: string;
+  label: string;
+  servicesPerformed: string[];
+  patch: Record<string, unknown>;
+}
+
+const QUICK_SERVICES: QuickService[] = [
+  {
+    key: 'oil-change',
+    label: 'Oil change',
+    servicesPerformed: ['Oil change'],
+    patch: { oil: { level: 'good', condition: 'clean', changed: true } },
+  },
+  {
+    key: 'tire-rotation',
+    label: 'Tire rotation',
+    servicesPerformed: ['Tire rotation'],
+    patch: {},
+  },
+  {
+    key: 'brake-service',
+    label: 'Brake service',
+    servicesPerformed: ['Brake service'],
+    patch: { brakeFluid: { level: 'good', condition: 'good', changed: true } },
+  },
+  {
+    key: 'coolant-flush',
+    label: 'Coolant flush',
+    servicesPerformed: ['Coolant flush'],
+    patch: { coolant: { level: 'good', condition: 'good', changed: true } },
+  },
+  {
+    key: 'transmission-service',
+    label: 'Transmission service',
+    servicesPerformed: ['Transmission service'],
+    patch: { transmissionFluid: { level: 'good', condition: 'good', changed: true } },
+  },
+  {
+    key: 'inspection',
+    label: 'Inspection',
+    servicesPerformed: ['Inspection'],
+    patch: {},
+  },
+];
+
+const defaultFluids = {
+  oil: { level: 'not_checked', condition: 'not_checked', changed: false },
+  brakeFluid: { level: 'not_checked', condition: 'not_checked', changed: false },
+  transmissionFluid: { level: 'not_checked', condition: 'not_checked', changed: false },
+  coolant: { level: 'not_checked', condition: 'not_checked', changed: false },
+  powerSteeringFluid: { level: 'not_checked', changed: false },
+};
+
+function FluidRow({ label, value, changed }: { label: string; value?: string; changed?: boolean }) {
+  return (
+    <div className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+      <span className="text-sm text-gray-600">{label}</span>
+      <span className="flex items-center gap-2">
+        <span className="text-sm font-medium text-gray-900 capitalize">
+          {(value || 'not checked').replace(/_/g, ' ')}
+        </span>
+        {changed && (
+          <span className="text-[11px] font-medium px-2 py-0.5 bg-green-100 text-green-800 rounded-full">
+            changed
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
 export function VehicleDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
+  const [mileage, setMileage] = useState('');
+  const [serviceDate, setServiceDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
   const createConsultationMutation = useMutation({
     mutationFn: async (intakeData: ConsultationIntakeData) => {
@@ -138,6 +217,81 @@ export function VehicleDetails() {
   const obdStats = obdStatsData?.stats;
   const obdSessions = obdSessionsData?.data || [];
   const diagnosticReports: DiagnosticReport[] = diagnosticReportsData?.data || [];
+
+  // Latest full service record - this is what the app reads for fluids.
+  const { data: fullRecordsData } = useQuery({
+    queryKey: ['vehicle-service-records', id],
+    queryFn: async () => {
+      const res = await api.get(`/service-records?vehicleId=${id}&limit=1`);
+      return (res.data.data || []) as any[];
+    },
+    enabled: !!id,
+  });
+  const latestRecord: any = useMemo(
+    () => (fullRecordsData && fullRecordsData.length > 0 ? fullRecordsData[0] : null),
+    [fullRecordsData]
+  );
+
+  const logMutation = useMutation({
+    mutationFn: async (preset: QuickService) => {
+      const mileageAtService = mileage ? parseInt(mileage, 10) : (vehicle?.mileage || 0);
+      const body: Record<string, unknown> = {
+        vehicleId: id,
+        serviceDate,
+        mileageAtService,
+        overallHealth: 'good',
+        notes: `Quick ${preset.label.toLowerCase()} logged from the vehicle page.`,
+        recommendations: [],
+        servicesPerformed: preset.servicesPerformed,
+        brakePads: { frontLeft: 100, frontRight: 100, rearLeft: 100, rearRight: 100 },
+        tires: {
+          frontLeft: { treadDepth: 8, pressure: 32, condition: 'not_checked' },
+          frontRight: { treadDepth: 8, pressure: 32, condition: 'not_checked' },
+          rearLeft: { treadDepth: 8, pressure: 32, condition: 'not_checked' },
+          rearRight: { treadDepth: 8, pressure: 32, condition: 'not_checked' },
+        },
+        battery: { voltage: 12.6, health: 'not_checked', replaced: false },
+        airFilter: { condition: 'not_checked', replaced: false },
+        cabinAirFilter: { condition: 'not_checked', replaced: false },
+        wipers: { front: 'not_checked', rear: 'not_checked', replaced: false },
+        lights: { headlights: 'not_checked', taillights: 'not_checked', brakeLights: 'not_checked', turnSignals: 'not_checked' },
+        ...defaultFluids,
+        ...preset.patch,
+      };
+      if (preset.key === 'oil-change' && mileageAtService) {
+        (body as any).oil = { ...(defaultFluids.oil as object), ...(preset.patch.oil as object || {}), nextChangeMileage: mileageAtService + 5000 };
+      }
+      const res = await api.post('/service-records', body);
+      return res.data;
+    },
+    onSuccess: (_data, preset) => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle-service-records', id] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      setPendingKey(null);
+      setFeedback({ kind: 'ok', text: `${preset.label} logged. The app picks it up as the latest service data.` });
+    },
+    onError: (err: any) => {
+      setPendingKey(null);
+      const msg = err?.response?.data?.error || err?.message || 'Failed to log service';
+      setFeedback({ kind: 'err', text: String(msg) });
+    },
+  });
+
+  const deleteRecordMutation = useMutation({
+    mutationFn: async (recordId: string) => {
+      await api.delete(`/service-records/${recordId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle-service-records', id] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+    },
+  });
+
+  const handleQuickService = (preset: QuickService) => {
+    setFeedback(null);
+    setPendingKey(preset.key);
+    logMutation.mutate(preset);
+  };
 
   if (vehicleLoading) {
     return <PageLoading />;
@@ -430,6 +584,118 @@ export function VehicleDetails() {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Log service directly on this vehicle */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wrench className="h-5 w-5" />
+                Log a service
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {feedback && (
+                <div className={`rounded-lg px-4 py-3 text-sm ${feedback.kind === 'ok' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                  {feedback.text}
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Service date</label>
+                  <input
+                    type="date"
+                    value={serviceDate}
+                    onChange={(e) => setServiceDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mileage (defaults to {vehicle?.mileage?.toLocaleString() || 0} mi)
+                  </label>
+                  <input
+                    type="number"
+                    value={mileage}
+                    onChange={(e) => setMileage(e.target.value)}
+                    placeholder={String(vehicle?.mileage || 0)}
+                    min={0}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {QUICK_SERVICES.map((preset) => (
+                  <Button
+                    key={preset.key}
+                    variant="outline"
+                    size="sm"
+                    disabled={logMutation.isPending}
+                    onClick={() => handleQuickService(preset)}
+                  >
+                    {pendingKey === preset.key ? 'Logging...' : preset.label}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  Quick services post a full service record (oil next-change +5,000 mi). The app reads the latest record for fluids.
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/service-records/new?vehicleId=${id}`)}
+                >
+                  Full form →
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Droplets className="h-5 w-5" />
+                Latest fluids
+                {latestRecord && (
+                  <span className="text-sm font-normal text-gray-500">
+                    · {formatDate(latestRecord.serviceDate)} @ {(latestRecord.mileageAtService || 0).toLocaleString()} mi
+                  </span>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!latestRecord ? (
+                <p className="text-sm text-gray-500">
+                  No service records yet. Log one on the left and it becomes the app's fluid baseline.
+                </p>
+              ) : (
+                <div>
+                  <FluidRow label="Engine oil" value={latestRecord.oil?.condition !== 'not_checked' ? latestRecord.oil?.condition : latestRecord.oil?.level} changed={latestRecord.oil?.changed} />
+                  <FluidRow label="Brake fluid" value={latestRecord.brakeFluid?.condition !== 'not_checked' ? latestRecord.brakeFluid?.condition : latestRecord.brakeFluid?.level} changed={latestRecord.brakeFluid?.changed} />
+                  <FluidRow label="Transmission fluid" value={latestRecord.transmissionFluid?.condition !== 'not_checked' ? latestRecord.transmissionFluid?.condition : latestRecord.transmissionFluid?.level} changed={latestRecord.transmissionFluid?.changed} />
+                  <FluidRow label="Coolant" value={latestRecord.coolant?.condition !== 'not_checked' ? latestRecord.coolant?.condition : latestRecord.coolant?.level} changed={latestRecord.coolant?.changed} />
+                  <FluidRow label="Power steering" value={latestRecord.powerSteeringFluid?.level} changed={latestRecord.powerSteeringFluid?.changed} />
+                  {latestRecord.oil?.nextChangeMileage ? (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Next oil change at {Number(latestRecord.oil.nextChangeMileage).toLocaleString()} mi.
+                    </p>
+                  ) : null}
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Delete this service record? The app will fall back to the previous one.')) {
+                        deleteRecordMutation.mutate(latestRecord._id);
+                      }
+                    }}
+                    className="mt-3 inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Delete latest record
+                  </button>
                 </div>
               )}
             </CardContent>
