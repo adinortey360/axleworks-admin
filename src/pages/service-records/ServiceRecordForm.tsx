@@ -25,6 +25,7 @@ interface ServiceRecordData {
   transmissionFluid: { level: LevelOption; condition: ConditionOption; changed: boolean };
   coolant: { level: LevelOption; condition: ConditionOption; changed: boolean };
   powerSteeringFluid: { level: LevelOption; changed: boolean };
+  washerFluid: { level: LevelOption; changed: boolean };
   brakePads: { frontLeft: number; frontRight: number; rearLeft: number; rearRight: number };
   tires: {
     frontLeft: { treadDepth: number; pressure: number; condition: TireCondition };
@@ -52,6 +53,7 @@ const defaultFormData: ServiceRecordData = {
   transmissionFluid: { level: 'not_checked', condition: 'not_checked', changed: false },
   coolant: { level: 'not_checked', condition: 'not_checked', changed: false },
   powerSteeringFluid: { level: 'not_checked', changed: false },
+  washerFluid: { level: 'not_checked', changed: false },
   brakePads: { frontLeft: 100, frontRight: 100, rearLeft: 100, rearRight: 100 },
   tires: {
     frontLeft: { treadDepth: 8, pressure: 32, condition: 'not_checked' },
@@ -177,6 +179,7 @@ export function ServiceRecordForm() {
         transmissionFluid: existingRecord.transmissionFluid || defaultFormData.transmissionFluid,
         coolant: existingRecord.coolant || defaultFormData.coolant,
         powerSteeringFluid: existingRecord.powerSteeringFluid || defaultFormData.powerSteeringFluid,
+        washerFluid: (existingRecord as any).washerFluid || defaultFormData.washerFluid,
         brakePads: existingRecord.brakePads || defaultFormData.brakePads,
         tires: existingRecord.tires || defaultFormData.tires,
         battery: existingRecord.battery || defaultFormData.battery,
@@ -474,6 +477,17 @@ export function ServiceRecordForm() {
                 <SelectField label="Level" value={formData.powerSteeringFluid.level} onChange={(v) => setFormData(prev => ({ ...prev, powerSteeringFluid: { ...prev.powerSteeringFluid, level: v as LevelOption } }))} options={levelOptions} />
                 <div className="flex items-end">
                   <CheckboxField label="Fluid Changed" checked={formData.powerSteeringFluid.changed} onChange={(v) => setFormData(prev => ({ ...prev, powerSteeringFluid: { ...prev.powerSteeringFluid, changed: v } }))} />
+                </div>
+              </div>
+            </div>
+
+            {/* Washer Fluid (no OBD level exists - service records only) */}
+            <div>
+              <h4 className="font-medium mb-3">Washer Fluid</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <SelectField label="Level" value={formData.washerFluid.level} onChange={(v) => setFormData(prev => ({ ...prev, washerFluid: { ...prev.washerFluid, level: v as LevelOption } }))} options={levelOptions} />
+                <div className="flex items-end">
+                  <CheckboxField label="Topped Up" checked={formData.washerFluid.changed} onChange={(v) => setFormData(prev => ({ ...prev, washerFluid: { ...prev.washerFluid, changed: v } }))} />
                 </div>
               </div>
             </div>

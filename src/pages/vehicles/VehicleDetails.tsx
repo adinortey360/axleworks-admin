@@ -135,6 +135,7 @@ const defaultFluids = {
   transmissionFluid: { level: 'not_checked', condition: 'not_checked', changed: false },
   coolant: { level: 'not_checked', condition: 'not_checked', changed: false },
   powerSteeringFluid: { level: 'not_checked', changed: false },
+  washerFluid: { level: 'not_checked', changed: false },
 };
 
 function FluidRow({ label, value, changed }: { label: string; value?: string; changed?: boolean }) {
@@ -264,6 +265,7 @@ export function VehicleDetails() {
       transmissionFluid: pick('transmissionFluid'),
       coolant: pick('coolant'),
       powerSteeringFluid: pick('powerSteeringFluid'),
+      washerFluid: pick('washerFluid'),
     };
   }, [fullRecordsData]);
   const mergedNextChange: number | undefined = useMemo(() => {
@@ -733,6 +735,7 @@ export function VehicleDetails() {
                   <FluidRow label="Transmission fluid" value={mergedFluids.transmissionFluid?.condition !== 'not_checked' ? mergedFluids.transmissionFluid?.condition : mergedFluids.transmissionFluid?.level} changed={mergedFluids.transmissionFluid?.changed} />
                   <FluidRow label="Coolant" value={mergedFluids.coolant?.condition !== 'not_checked' ? mergedFluids.coolant?.condition : mergedFluids.coolant?.level} changed={mergedFluids.coolant?.changed} />
                   <FluidRow label="Power steering" value={mergedFluids.powerSteeringFluid?.level} changed={mergedFluids.powerSteeringFluid?.changed} />
+                  <FluidRow label="Washer fluid" value={mergedFluids.washerFluid?.level} changed={mergedFluids.washerFluid?.changed} />
                   {mergedNextChange ? (
                     <p className="text-xs text-gray-500 mt-2">
                       Next oil change at {Number(mergedNextChange).toLocaleString()} mi.
