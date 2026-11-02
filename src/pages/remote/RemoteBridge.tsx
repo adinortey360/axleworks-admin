@@ -18,6 +18,8 @@ export interface RemoteSession {
   ownerPhone?: string;
   connectedAt: string;
   lastSeenAt: string;
+  /** Raw CAN window expiry (ms epoch) while active. */
+  rawUntil?: number;
 }
 
 interface AuditRow {
@@ -66,6 +68,7 @@ export function RemoteBridge() {
     () => sessions.find((s) => s.sessionId === selectedId) ?? null,
     [sessions, selectedId]
   );
+  const rawActive = !!selected?.rawUntil && selected.rawUntil > Date.now();
 
   const pushLog = useCallback((entry: LogEntry) => {
     setLog((prev) => [...prev.slice(-199), entry]);
@@ -181,6 +184,48 @@ export function RemoteBridge() {
     []
   );
 
+  const toggleRaw = useCallback(async () => {
+    if (!selected || busy) return;
+    const want = !rawActive;
+    if (
+      want &&
+      !window.confirm(
+        'Enable RAW CAN mode for 15 minutes? The phone may then execute any diagnostic command (except clear codes / actuations). Everything is audit-logged.'
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    try {
+      const ws = await ensureSocket();
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('no reply within 10s')), 10000);
+        const onMsg = (ev: MessageEvent) => {
+          let m: any;
+          try {
+            m = JSON.parse(String(ev.data));
+          } catch {
+            return;
+          }
+          if (m?.type === 'result' && m.id == null) {
+            clearTimeout(timer);
+            ws.removeEventListener('message', onMsg);
+            if (m.ok) resolve();
+            else reject(new Error(String(m.error ?? 'toggle failed')));
+          }
+        };
+        ws.addEventListener('message', onMsg);
+        ws.send(JSON.stringify({ type: 'raw', sessionId: selected.sessionId, on: want }));
+      });
+      pushLog({ at: Date.now(), dir: 'sys', text: want ? 'raw CAN enabled (15 min)' : 'raw CAN disabled' });
+      loadSessions();
+    } catch (e) {
+      pushLog({ at: Date.now(), dir: 'in', text: `FAILED: ${e instanceof Error ? e.message : String(e)}`, ok: false });
+    } finally {
+      setBusy(false);
+    }
+  }, [selected, busy, rawActive, ensureSocket, pushLog, loadSessions]);
+
   const sendCommand = useCallback(async () => {
     const command = cmd.trim();
     if (!command || !selectedId || busy) return;
@@ -260,6 +305,9 @@ export function RemoteBridge() {
                     >
                       <div className="font-medium text-gray-900">
                         {s.vehicle.year ?? ''} {s.vehicle.make ?? 'Unknown make'} {s.vehicle.model ?? ''}
+                        {!!s.rawUntil && s.rawUntil > Date.now() && (
+                          <span className="ml-2 text-[10px] font-bold text-red-600 border border-red-300 rounded px-1">RAW</span>
+                        )}
                       </div>
                       <div className="text-xs text-gray-500">
                         {s.vehicle.vin ?? 'no VIN'} · {s.ownerPhone ?? 'unknown owner'}
@@ -278,10 +326,29 @@ export function RemoteBridge() {
           </CardHeader>
           <CardContent>
             {!selected ? (
-              <p className="text-sm text-gray-500">Select a live car to send it commands.</p>
+              <p className="text-sm text-gray-500">Select a live car to send commands to it.</p>
             ) : (
               <>
-                <div className="flex flex-wrap gap-2 mb-3">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <button
+                  onClick={() => void toggleRaw()}
+                  disabled={busy}
+                  title="Raw CAN: any diagnostic service except clear codes / actuations, auto-expires in 15 minutes"
+                  className={`px-2 py-1 text-xs font-semibold rounded border ${
+                    rawActive
+                      ? 'bg-red-50 border-red-300 text-red-700'
+                      : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {rawActive ? 'RAW ON — click to disable' : 'Enable raw CAN (15 min)'}
+                </button>
+                {rawActive && selected.rawUntil && (
+                  <span className="text-xs text-red-600">
+                    expires {new Date(selected.rawUntil).toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2 mb-3">
                   {PRESETS.map((p) => (
                     <button
                       key={p}
