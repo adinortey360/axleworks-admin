@@ -1,24 +1,25 @@
 import { NavLink } from 'react-router-dom';
 import { cn } from '../../utils';
 import {
-  LayoutDashboard,
-  Users,
-  Car,
+  BarChart3,
   Calendar,
+  Car,
+  ClipboardCheck,
   ClipboardList,
-  FileText,
-  Receipt,
   CreditCard,
+  FileText,
+  LayoutDashboard,
+  LogOut,
   Package,
+  Radio,
+  Receipt,
+  Settings,
+  Stethoscope,
   Truck,
   UserCog,
+  Users,
   Wallet,
-  BarChart3,
-  Settings,
-  LogOut,
   Wrench,
-  Stethoscope,
-  ClipboardCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -38,6 +39,7 @@ const navigation = [
   { name: 'Employees', href: '/employees', icon: UserCog },
   { name: 'Expenses', href: '/expenses', icon: Wallet },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
+  { name: 'Remote Bridge', href: '/remote-bridge', icon: Radio },
 ];
 
 export function Sidebar() {

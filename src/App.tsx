@@ -16,6 +16,7 @@ import { SuppliersList } from './pages/suppliers/SuppliersList';
 import { EmployeesList } from './pages/employees/EmployeesList';
 import { ExpensesList } from './pages/expenses/ExpensesList';
 import { Reports } from './pages/reports/Reports';
+import { RemoteBridge } from './pages/remote/RemoteBridge';
 import { DiagnosticReportsList } from './pages/reports/DiagnosticReportsList';
 import { DiagnosticReportDetails } from './pages/reports/DiagnosticReportDetails';
 import { ServiceRecordForm } from './pages/service-records/ServiceRecordForm';
@@ -54,6 +55,7 @@ function App() {
         <Route path="employees" element={<EmployeesList />} />
         <Route path="expenses" element={<ExpensesList />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="remote-bridge" element={<RemoteBridge />} />
       </Route>
     </Routes>
   );
