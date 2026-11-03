@@ -51,7 +51,7 @@ function wsUrl(): string {
   return `${host}/ws/remote-console`;
 }
 
-const PRESETS = ['ATRV', 'ATDPN', '0100', '010C', '010D', '0105', '03', '0902', '0900'];
+const PRESETS = ['ATRV', 'ATDPN', '0100', '010C', '010D', '0105', '03', '0902', '0900', 'AT MA 10'];
 
 export function RemoteBridge() {
   const [sessions, setSessions] = useState<RemoteSession[]>([]);
@@ -250,7 +250,11 @@ export function RemoteBridge() {
     const command = cmd.trim();
     if (!command || !selectedId || busy) return;
     setBusy(true);
-    pushLog({ at: Date.now(), dir: 'out', text: command });
+    pushLog({ at: Date.now(), dir: 'out', text: command + (rawActive ? '  [raw]' : '') });
+    // Bounded snapshots record seconds of traffic on the phone: budget the
+    // window plus headroom instead of the default timeout.
+    const snapSecs = /^\s*AT\s+MA\s+([1-9]|1[0-5])\s*$/i.exec(command);
+    const execTimeout = snapSecs ? Math.min(parseInt(snapSecs[1], 10) * 1000 + 15000, 60000) : 20000;
     try {
       const ws = await ensureSocket();
       const id = `c${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -263,7 +267,7 @@ export function RemoteBridge() {
           clearTimeout(timer);
           resolve(m);
         });
-        ws.send(JSON.stringify({ type: 'exec', id, sessionId: selectedId, cmd: command, timeoutMs: 20000 }));
+        ws.send(JSON.stringify({ type: 'exec', id, sessionId: selectedId, cmd: command, timeoutMs: execTimeout }));
       });
       const text = res?.ok ? String(res.response ?? 'ok').trim() : `FAILED: ${res?.error ?? 'unknown error'}`;
       pushLog({ at: Date.now(), dir: 'in', text, ok: !!res?.ok });
@@ -386,7 +390,7 @@ export function RemoteBridge() {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') void sendCommand();
                     }}
-                    placeholder="010C or AT SH 7E2 + 22 199A…"
+                    placeholder="010C · AT SH 7E2 + 22 199A · AT MA 10 (10s CAN snapshot)"
                     spellCheck={false}
                     className="flex-1 border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
