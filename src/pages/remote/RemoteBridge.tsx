@@ -168,10 +168,30 @@ export function RemoteBridge() {
         if (wsRef.current === ws) {
           wsRef.current = null;
           setConnected(false);
+          // The relay (or a sleeping backend) dropped us mid-probe. Keep
+          // trying in the background instead of stranding the console on a
+          // dead socket; the next send would otherwise fail confusingly.
+          void autoReconnect();
         }
       };
     });
   }, []);
+
+  const autoReconnect = useCallback(async () => {
+    for (let attempt = 1; attempt <= 8; attempt++) {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+      await new Promise((r) => setTimeout(r, Math.min(2000 * attempt, 15000)));
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+      try {
+        await ensureSocket();
+        pushLog({ at: Date.now(), dir: 'sys', text: 'console reconnected' });
+        return;
+      } catch {
+        pushLog({ at: Date.now(), dir: 'sys', text: `reconnecting… (attempt ${attempt}/8)` });
+      }
+    }
+    pushLog({ at: Date.now(), dir: 'sys', text: 'reconnect failed - refresh the page and try again' });
+  }, [ensureSocket, pushLog]);
 
   useEffect(
     () => () => {
